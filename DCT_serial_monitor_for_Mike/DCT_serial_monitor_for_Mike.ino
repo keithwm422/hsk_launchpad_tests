@@ -573,7 +573,7 @@ void write_the_value_to_PotA(){
       to_write_array[0]=254;
       to_write_array[1]=171;
       to_write_array[2]=number;
-      to_write_array[3]=13;
+      to_write_array[3]=13; // carriage return duh
       Serial3.write(to_write_array,4);
       Serial.println("POTA");
   }
