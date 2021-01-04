@@ -70,7 +70,7 @@ void loop() {
   switch(Flowmeters_State){
     case Flowmeters_Idle:{
       if(flow_1.available()){ // this will just clear the buffer really.
-        flowmetersBuffer=flow_1.read_byte();
+        flowmetersBuffer=(char)flow_1.read_byte();
         //Serial.print(flowmetersBuffer);
         break;
       }
