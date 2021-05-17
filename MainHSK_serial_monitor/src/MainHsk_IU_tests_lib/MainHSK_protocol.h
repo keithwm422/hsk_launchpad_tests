@@ -75,10 +75,10 @@ typedef struct SSOut_vals {
   float DCTTemp10;
   float BatteryTemp1;
   float BatteryTemp2;
-  uint16_t Solar1;
-  uint16_t Solar2;
-  uint16_t Solar3;
-  uint16_t Solar4;
+  uint16_t Power1;
+  uint16_t Power2;
+  uint16_t Power3;
+  uint16_t Power4;
 } SSOut_vals_t;
 /* not needed anymore
 typedef enum {
