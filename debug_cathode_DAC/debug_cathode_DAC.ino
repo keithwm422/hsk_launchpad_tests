@@ -1,12 +1,12 @@
 #include "Wire.h"
 #include "MCP4728_cathode.h"
 MCP4728_CAT cat_dac;
-const int port_cathode=1;
+const int port_cathode=3;
 TwoWire * wire_cathode= new TwoWire(port_cathode);
-uint8_t cat_LDAC=14; // pin 2 of launchpad is the LDAC pin we use here. 
+uint8_t cat_LDAC=2; // pin 2 of launchpad is the LDAC pin we use here. 
 
 uint8_t default_address=96;
-
+uint8_t offset_ID=1;
 // for Launchpad LED
 #define LED GREEN_LED
 #define LED_UPDATE_PERIOD 1350
@@ -38,9 +38,9 @@ void Cathode_setup(){
   cat_dac.attach(*wire_cathode, cat_LDAC); // set the LDAC pin of launchpad and the i2c comms
   // Setup all DAC channels to have VDD as reference.
   //There are 8 chips each with their own addresses and 4 channels on each chip
-  cat_dac.setID(default_address);
+  cat_dac.setID(default_address+offset_ID);
   cat_dac.selectVref(MCP4728_CAT::VREF::VDD, MCP4728_CAT::VREF::VDD, MCP4728_CAT::VREF::VDD, MCP4728_CAT::VREF::VDD);
-  cat_dac.analogWrite(0,0,0,0);
+  cat_dac.analogWrite(4095,4095,4095,4095);
 //  cat_dac.readRegisters();
 //  for(int j=0;j<4;j++) dac_val=dac_val | cat_dac.getDACData(j);
 }

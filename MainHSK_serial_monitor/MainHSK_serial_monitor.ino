@@ -2,7 +2,9 @@
 #include <Core_protocol.h>
 #include <PacketSerial.h>
 #include <driverlib/sysctl.h>
-#include <Hsk_all_data_types.h>
+//#include <Hsk_all_data_types.h>
+#include <file_test_head.h>
+using namespace MainHSK_cmd;
 #define DOWNBAUD 115200 // Baudrate for serial monitor
 
 #include "src/MainHsk_IU_tests_lib/Flowmeters.h"
@@ -12,7 +14,7 @@ double gasdata[6]={0};
 char gastype[100];
 char errorcode[100];
 int baud_flows =19200;
-const char * flow_ID_1= "A";
+const char * flow_ID_1= "C";
 sMainFlows mainflows[3];
 sMainFlowsGasString mainflowsgasstring;
 char gas1[100];
@@ -47,7 +49,7 @@ void setup() {
 
   //Flowmeters initializations, flow_1 object instance (should be one instance per flowmeter)
   // Serial connections: 4,6, and 7. 
-  flow_1.begin(Serial7,baud_flows, flow_ID_1);
+  flow_1.begin(Serial4,baud_flows, flow_ID_1);
   FlowmetersUpdateTime = millis() + FLOWMETERS_UPDATE_PERIOD;
   Serial.println("Starting...");
   pinMode(LED,OUTPUT);

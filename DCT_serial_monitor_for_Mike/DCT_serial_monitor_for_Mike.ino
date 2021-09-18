@@ -18,9 +18,10 @@
 #include <Core_protocol.h>
 #include <PacketSerial.h>
 #include <driverlib/sysctl.h>
-#include <Hsk_all_data_types.h>
+//#include <Hsk_all_data_types.h>
 /* These are device specific */
 #include "src/DCTHSK_lib/DCTHSK_protocol.h"
+using namespace DCTHSK_cmd;
 // from magnet hsk for LTC2983
 
 #include "driverlib/uart.h"
@@ -37,7 +38,7 @@
 // these files above need to be changed based on the thermistor or rtd, etc. So if we borrow the examples from magnet hsk then we can change the channels and types in just these files but keep the function the same. 
 //////////////////////////////////////
 #define DOWNBAUD 115200 // Baudrate to the SFC
-#define UPBAUD 19200    // Baudrate to upsteam devices
+#define UPBAUD 115200    // Baudrate to upsteam devices
 #define TEST_MODE_PERIOD 100 // period in milliseconds between testmode packets being sent
 #define FIRST_LOCAL_COMMAND 2 // value of hdr->cmd that is the first command local to the board
 #define NUM_LOCAL_CONTROLS 8 // how many commands total are local to the board
@@ -135,19 +136,19 @@ bool is_high=true;
 float pres_val=0;
 float cat_v=0;
 float conversion_factor=3.3*1406.0/(1000.0*4096.0);
-#define PACKET_UPDATE_PERIOD 10000
+#define PACKET_UPDATE_PERIOD 1000
 unsigned long PACKETUpdateTime=0; // send reads as packets every period defined above
 char receive[20]; // big anough to store things
 int write_val=0;
 int char_iter;
 bool new_write=false;
 int length_sent=0;
-#define CATHODE_VOLTAGE_CUTOFF 4000
-#define CATHODE_VOLTAGE_STEP_PERIOD 5000 // ten seconds
-#define CATHODE_VOLTAGE_STEP_VALUE 130 // in DAC counts
-#define POTENTIAL_VOLTAGE_CUTOFF 4000
-#define POTENTIAL_VOLTAGE_STEP_PERIOD 5000 // ten seconds
-#define POTENTIAL_VOLTAGE_STEP_VALUE 130 // in DAC counts
+#define CATHODE_VOLTAGE_CUTOFF 3800
+#define CATHODE_VOLTAGE_STEP_PERIOD 2000 // ten seconds
+#define CATHODE_VOLTAGE_STEP_VALUE 10 // in DAC counts
+#define POTENTIAL_VOLTAGE_CUTOFF 4090
+#define POTENTIAL_VOLTAGE_STEP_PERIOD 2000 // ten seconds
+#define POTENTIAL_VOLTAGE_STEP_VALUE 10 // in DAC counts
 bool step_HV_C=false;
 bool step_HV_P=false;
 unsigned long step_HV_C_time=0;
@@ -277,7 +278,8 @@ void loop()
     // if "P" for Potential HV 
     else if(receive[0]=='E') EN_CHV(); // for CATHODE ENABLE PIN
     else if(receive[0]=='D') DIS_CHV(); // for DISABLING CATHODE
-
+    else if(receive[0]=='Y') EN_PHV(); // for Potential ENABLE PIN
+    else if(receive[0]=='Z') DIS_PHV(); // for DISABLING Potential
     else if(receive[0]=='P') write_HV(2); // for VPGM of Potential
     else if(receive[0]=='I') write_HV(3); // for Ilim of potnetial
     else if(receive[0]=='J') write_HV(4); // for Ilim of Potential
@@ -365,7 +367,7 @@ void loop()
   // read in pressure
   if((long) (millis() - pressureUpdateTime) > 0){
     pressureUpdateTime+= PRESSURE_UPDATE_PERIOD;
-    dct_pressure.Pressure=PressureRead();
+    dct_pressure.Pressure_vessel=PressureRead();
   }
   if((long) (millis() - LEDUpdateTime) > 0){
     LEDUpdateTime+= LED_UPDATE_PERIOD;
@@ -374,12 +376,15 @@ void loop()
   }
   if((long) (millis() - PACKETUpdateTime) > 0){
     PACKETUpdateTime+= PACKET_UPDATE_PERIOD;
-    Serial.println("INCOMING DATA");
-    Serial.println();
-    print_HV_mon();
-    print_pressure();
+    //Serial.println("INCOMING DATA");
+    //Serial.println();
+    Serial.print("P: ");
+    print_PHV_mon();
+    Serial.print("C: ");
+    print_CHV_mon();
+    //print_pressure();
     //print_thermistors();
-    Serial.println();
+    //Serial.println();
     
   }
   if(step_HV_C){
@@ -432,6 +437,7 @@ void loop()
   //if (downStream1.update() != 0) badPacketReceived(&downStream1);
 }
 
+/*
 void print_HV_mon(){
   // Cathode HV
   if(is_cathode_disabled) Serial.println("Cathode HV is disabled");
@@ -444,7 +450,7 @@ void print_HV_mon(){
   Serial.print(cat_v,4);
   //Serial.print("SO HV line is at (Volts): ");
   Serial.print(" , ");
-  Serial.println(cat_v/4.64*1000.0,4);
+  Serial.println(cat_v/4.64*10000.0,4);
   // Cathode Current
   Serial.print("The Cathode Current is: ");
   Serial.print(hvmon.CatImon);
@@ -466,7 +472,7 @@ void print_HV_mon(){
   Serial.print(cat_v,4);
   Serial.print(" , ");
   //Serial.print("SO HV line is at (Volts): ");
-  Serial.println(cat_v/4.64*1000.0,4);
+  Serial.println(cat_v/4.64*10000.0,4);
   // Potential Current
   Serial.print("The Potential Current is: ");
   Serial.print(hvmon.PotImon);
@@ -482,11 +488,56 @@ void print_HV_mon(){
   Serial.print(" , ");
   Serial.println(ot_potential_read);
 }
+*/
+void print_CHV_mon(){
+    // Cathode HV
+  Serial.print(voltage_cathode);
+  Serial.print(",");
+  Serial.print(hvmon.CatVmon);
+  Serial.print(",");
+  cat_v=hvmon.CatVmon*conversion_factor;
+  //Serial.print("In Volts out of 4.64 it is: ");
+  Serial.print(cat_v,4);
+  Serial.print(",");
+  Serial.print(cat_v/4.64*10000.0,4);
+  Serial.print(",");
+  // Cathode Current
+  Serial.print(hvmon.CatImon);
+  cat_v=hvmon.CatImon*conversion_factor;
+  Serial.print(",");
+  //Serial.print("In Volts out of 4.64 it is: ");
+  Serial.print(cat_v,4);
+  Serial.print(",");
+  //Serial.print("SO Current line reads (mA): ");
+  Serial.println(cat_v/4.64*1.5,4);
+}
+void print_PHV_mon(){
+    // Potential HV
+  Serial.print(voltage_potential);
+  Serial.print(",");
+  Serial.print(hvmon.PotVmon);
+  Serial.print(",");
+  cat_v=hvmon.PotVmon*conversion_factor;
+  //Serial.print("In Volts out of 4.64 it is: ");
+  Serial.print(cat_v,4);
+  Serial.print(",");
+  Serial.print(cat_v/4.64*10000.0,4);
+  Serial.print(",");
+  // Potential Current
+  Serial.print(hvmon.PotImon);
+  cat_v=hvmon.PotImon*conversion_factor;
+  Serial.print(",");
+  //Serial.print("In Volts out of 4.64 it is: ");
+  Serial.print(cat_v,4);
+  Serial.print(",");
+  //Serial.print("SO Current line reads (mA): ");
+  Serial.println(cat_v/4.64*1.5,4);
+}
 
 void print_pressure(){
   Serial.print("The Pressure Transducer read: ");
-  Serial.println(dct_pressure.Pressure);
-  pres_val=(dct_pressure.Pressure*30.0/(1024.0));
+  Serial.println(dct_pressure.Pressure_vessel);
+  pres_val=(dct_pressure.Pressure_vessel*30.0/(1024.0));
   Serial.print("In psi: ");
   Serial.println(pres_val,4);
 }
@@ -504,10 +555,20 @@ void EN_CHV(){
   digitalWrite(EN_CAT,HIGH);
   is_cathode_disabled=false;
 }
+void EN_PHV(){
+  Serial.println("Potential HV enabled");
+  digitalWrite(EN_POT,HIGH);
+  is_potential_disabled=false;
+}
 void DIS_CHV(){
   Serial.println("Cathode HV disabled");
   digitalWrite(EN_CAT,LOW);
   is_cathode_disabled=true;
+}
+void DIS_PHV(){
+  Serial.println("Potential HV disabled");
+  digitalWrite(EN_POT,LOW);
+  is_potential_disabled=true;
 }
 void write_the_value_to_HV_C(){
   int number = ceil(write_val*4096.0/100.0);
@@ -573,8 +634,9 @@ void write_the_value_to_PotA(){
       to_write_array[0]=254;
       to_write_array[1]=171;
       to_write_array[2]=number;
-      to_write_array[3]=13; // carriage return duh
-      Serial3.write(to_write_array,4);
+//      to_write_array[3]=13; // carriage return duh
+      //Serial3.write(to_write_array,4);
+      Serial3.write(to_write_array,3);
       Serial.println("POTA");
   }
   
@@ -588,8 +650,9 @@ void write_the_value_to_PotB(){
       to_write_array[0]=254;
       to_write_array[1]=171;
       to_write_array[2]=number;
-      to_write_array[3]=13;
-      Serial2.write(to_write_array,4);
+      //to_write_array[3]=13;
+      //Serial2.write(to_write_array,4);
+      Serial2.write(to_write_array,3);
       Serial.println("POTB");
   }
   
@@ -891,7 +954,7 @@ int handleLocalRead(uint8_t localCommand, uint8_t *buffer) {
   case eSetPriority:
     retval = EBADLEN;
     break;
-  case eIntSensorRead: {
+  case eDCTIntSensorRead: {
     uint32_t TempRead=analogRead(TEMPSENSOR);
     float TempC = (float)(1475 - ((2475 * TempRead) / 4096)) / 10;
     memcpy(buffer,(uint8_t *) &TempC,sizeof(TempC));
@@ -967,7 +1030,7 @@ int handleLocalRead(uint8_t localCommand, uint8_t *buffer) {
     retval=sizeof(sDCTPressure);
     break;
   }
-  case eISR: {
+  case eDCTISR: {
     uint32_t TempRead=analogRead(TEMPSENSOR);
     float TempC = (float)(1475 - ((2475 * TempRead) / 4096)) / 10;
     memcpy(buffer,(uint8_t *) &TempC,sizeof(TempC));

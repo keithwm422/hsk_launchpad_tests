@@ -1,20 +1,20 @@
 // Flowmeato receiver
 char receive[80];
-
+// either serial1, 7 or 6 (6 should be solo conn)
 char send_out[10];
 int i=0;
 void setup() {
   Serial.begin(115200);
   Serial.print("hello");
-  Serial1.begin(19200);
+  Serial7.begin(19200);
   // don't do anything else because this should only be sending messages when polled
 }
 
 void loop() {
   // put your main code here, to run repeatedly
-  if(Serial1.available()){
+  if(Serial7.available()){
 //    receive[i]=Serial1.read();
-    char receive_new=Serial1.read();
+    char receive_new=Serial7.read();
 /*    else {
       if(i>=79) {
         i=0;
@@ -33,7 +33,7 @@ void loop() {
     Serial.print(receive_new);
   }
   else {
-    Serial1.print("A\r");
+    Serial7.print("A\r");
     delay(1000);
   }
 }

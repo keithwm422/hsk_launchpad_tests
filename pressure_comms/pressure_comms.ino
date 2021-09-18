@@ -1,11 +1,12 @@
 // Use to test the pressure gauge at scott's crib
 #include "Pressure.h"
-#include "Wire_nonblocking.h"
-#include "DS2482_nonblocking_v2.h"
+
+//#include "Wire_nonblocking.h"
+//#include "DS2482_nonblocking_v2.h"
 Pressure pressure;
 char response[200]={0};
-int baud_pressure =19200;
-int new_baud =19200;
+int baud_pressure =9600;
+int new_baud =74880;
 char one_byte;
 char helix[8]="HELIX";
 uint8_t unit=2;
@@ -69,8 +70,8 @@ int temp_tracker=0; // to record which temp1wire probe we are using.
 unsigned long i2c_onewire=1;
 bool Onewire_conn;
 uint8_t chan_1_wire=4;
-TwoWire *wire_onewirebus_obj= new TwoWire(i2c_onewire); // i2C object for the i2c port on the launchpad
-DS2482 ds_sm(0,*wire_onewirebus_obj); // OneWire bridge object for sending commands to the OneWire bridge
+//TwoWire *wire_onewirebus_obj= new TwoWire(i2c_onewire); // i2C object for the i2c port on the launchpad
+//DS2482 ds_sm(0,*wire_onewirebus_obj); // OneWire bridge object for sending commands to the OneWire bridge
 uint8_t channel_rtn;
 uint8_t address1[8]={0x28,0x7B,0xAA,0x79,0x97,0x06,0x03,0xD1};
 //uint8_t address2[8]={0x28,0x6A,0xC6,0x79,0x97,0x06,0x03,0x8D};
@@ -82,19 +83,29 @@ bool second_write=false;
 int select_step=0; //used to go into same state 9 times woah
 int read_step=0; //incrementer for reading the temp sensor data bytes
 byte data_1wire[12]={0};  // data from a 1wire device
-uint8_t rx_state=I2C_BUSY;
-uint8_t tx_state=I2C_BUSY;
+//uint8_t rx_state=I2C_BUSY;
+//uint8_t tx_state=I2C_BUSY;
+uint8_t rx_state=0xFF;
+uint8_t tx_state=0xFF;
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(1000000);
-  pressure.begin(Serial1,baud_pressure);
+  Serial.begin(115200);
+  pressure.begin(Serial3,baud_pressure);
   Serial.print("starting...");
+  delay(1000);
+  pressure.poll_baud();
+  while(pressure.is_available()){
+    Serial.print(pressure.get_one_byte());
+  }
+ // pressure.unlock();
+ // pressure.setbaud(new_baud);
+ // pressure.lock();
 //  pressure.read_port_again();
 //  print_pressure();
   pressure.reset_string();
     // new i2c 1wire bridge setup
-  wire_onewirebus_obj->begin();
-  wire_onewirebus_obj->flush();
+  //wire_onewirebus_obj->begin();
+  //wire_onewirebus_obj->flush();
   //while(wire_bridge_broken());
 }
 // state machine loop
@@ -192,7 +203,7 @@ void loop(){
 //  Serial.print("\n");
   //  i2c one wire bridge conn
   // new states for 1wire bridge
-  if(ds_sm.RXStatus()==0 && ds_sm.TXStatus()==0){
+/*  if(ds_sm.RXStatus()==0 && ds_sm.TXStatus()==0){
     switch (Onewire_state){
       case SENSOR_STATE_I2C_IDLE:{
         if ((long) (millis() - sensorUpdateTime) > 0) {
@@ -403,15 +414,17 @@ void loop(){
   // end of i2C 1wire bridge states
  // print_1wire();
  // print_internal();
-
+*/
 }
 // new I2C 1Wire bridge states
+/*
 void check_states(){
   do{
     rx_state=ds_sm.RXStatus();
     tx_state=ds_sm.TXStatus();
   } while(rx_state!=0 || tx_state!=0);
 }
+*/
 void write_celsius(){
   int16_t raw = (data_1wire[1] << 8) | data_1wire[0];
   byte cfg = (data_1wire[4] & 0x60);
@@ -430,6 +443,7 @@ void write_celsius(){
   Serial.print(celsius[temp_tracker],4);
   Serial.print("\n");
 }
+/*
 void wirestatus_setup(bool value){
   ds_sm.wireReadStatusSetup(value);
 }
@@ -481,6 +495,7 @@ bool readstatus_stuff(){
     }
   }
 }
+*/
 /* request-receive loop
 void loop() {
 //  pressure.poll();
@@ -675,6 +690,7 @@ void loop() {
   delay(3000);
 }
 */
+/*
 bool wire_busy(bool status_for_wire){
   check_states();
   ds_sm.wireReadStatusSetup(status_for_wire);
@@ -690,16 +706,16 @@ bool wire_busy(bool status_for_wire){
 bool wire_bridge_broken(){
   // check rx and tx
   check_states();
-  ds_sm.reset();
+  //ds_sm.reset();
   check_states();
   while(wire_busy(true));
   check_states();
   // print off the configuration bits?
 //  ds_sm.configureSetup(DS2482_CONFIG_APU); we dont want active pullup because ?
   check_states();
-  ds_sm.configureRequest();
+  //ds_sm.configureRequest();
   check_states();
-  uint8_t config_status=ds_sm.configureBool();
+  //uint8_t config_status=ds_sm.configureBool();
   check_states();
   if(config_status!=0) return true;
   else return false;
@@ -707,6 +723,7 @@ bool wire_bridge_broken(){
 
 
 }
+*/
 void print_status(){
   Serial.print("state var is: ");
   Serial.print(Pressure_State);

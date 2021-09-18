@@ -22,6 +22,11 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly
+  Serial.print("i");
+  if(!Serial){
+    pinMode(BLUE_LED, OUTPUT);
+    digitalWrite(BLUE_LED,HIGH);
+  }
   while(Serial1.available()){
     receive[i]=Serial1.read();
     i++;
@@ -68,6 +73,7 @@ void loop() {
   if((long) (millis() - LEDUpdateTime) > 0){
     LEDUpdateTime+= LED_UPDATE_PERIOD;
     switch_LED();
+    Serial.println("LED");
   }
 // Serial1.print("this is the me");
 // delay(1000); 
