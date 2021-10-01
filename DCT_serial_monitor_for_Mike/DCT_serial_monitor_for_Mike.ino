@@ -136,6 +136,7 @@ bool is_high=true;
 float pres_val=0;
 float cat_v=0;
 float conversion_factor=3.3*1406.0/(1000.0*4096.0);
+double delta_V_DAC=5.0/4096.0;
 #define PACKET_UPDATE_PERIOD 1000
 unsigned long PACKETUpdateTime=0; // send reads as packets every period defined above
 char receive[20]; // big anough to store things
@@ -274,21 +275,20 @@ void loop()
   // once we have a value, write it out to the DAC
   if(new_write){
     // if "C" for Cathode HV
-    if(receive[0]=='C') write_HV(1);
+    if(receive[0]=='C') write_HV_d(1);
     // if "P" for Potential HV 
     else if(receive[0]=='E') EN_CHV(); // for CATHODE ENABLE PIN
     else if(receive[0]=='D') DIS_CHV(); // for DISABLING CATHODE
     else if(receive[0]=='Y') EN_PHV(); // for Potential ENABLE PIN
     else if(receive[0]=='Z') DIS_PHV(); // for DISABLING Potential
-    else if(receive[0]=='P') write_HV(2); // for VPGM of Potential
-    else if(receive[0]=='I') write_HV(3); // for Ilim of potnetial
-    else if(receive[0]=='J') write_HV(4); // for Ilim of Potential
+    else if(receive[0]=='P') write_HV_d(2); // for VPGM of Potential
+    else if(receive[0]=='I') write_HV_d(3); // for Ilim of potnetial
+    else if(receive[0]=='J') write_HV_d(4); // for Ilim of Potential
     else if(receive[0]=='R') raise_CHV(); // for ramping Cathode
     else if(receive[0]=='Q') raise_PHV(); // for ramping Potential
     else if(receive[0]=='S') pause_all_HV(); // for sleeping/pausing ramping procedures
     else if(receive[0]=='W') continue_all_HV(); // for waking/resuming ramping procedures
     else if(receive[0]=='X') cancel_all_HV(); // for Ilim of Potential
-
     // if A for writing to potentiometer
     else if(receive[0]=='A') write_Potentiometer(1);
     else if(receive[0]=='B') write_Potentiometer(2);
@@ -570,7 +570,8 @@ void DIS_PHV(){
   digitalWrite(EN_POT,LOW);
   is_potential_disabled=true;
 }
-void write_the_value_to_HV_C(){
+// as integers or percentages
+/*void write_the_value_to_HV_C(){
   int number = ceil(write_val*4096.0/100.0);
   if(number <=4095 && number>=0){
     memcpy((uint8_t * ) &voltage_cathode, (uint8_t *)&number, sizeof(voltage_cathode));
@@ -615,6 +616,7 @@ void write_HV(int which_HV){
       // as an int
       memcpy((uint8_t *) temp_chars,(uint8_t *) &receive +1, length_sent--);
       write_val=atoi(temp_chars);
+      // can also do atof()
       Serial.print("converted to integer: ");
       Serial.println(write_val);
       new_write=false;
@@ -625,7 +627,82 @@ void write_HV(int which_HV){
       else Serial.println("choose 1 for Cat HV, 2 for Pot HV, 3 for Cat Ilim, 4 for Pot Ilim");
   }
 }
+*/
+// as doubles of microamps or Volts
+void write_the_value_to_HV_C_d(double write_val_d){
+  double voltage_on_programming_pin=write_val_d*4.64/10000.0; // this is for HV, different for current limit. Now this is in volts
+  // get the DAC to set to that value;
+  if(voltage_on_programming_pin<=4.65){
+    double DAC_value_d=voltage_on_programming_pin/delta_V_DAC;
+    voltage_cathode=lround(DAC_value_d);
+    CATChannelProgram(voltage_cathode, 3);
+    //Serial_print_header(voltage_on_programming_pin, DAC_value_d, voltage_cathode);
+    Serial.println("Cathode Wire Voltage changed");
+  }
+}
+void write_the_value_to_Cat_Ilim_d(double write_val_d){
+  double voltage_on_programming_pin=write_val_d*4.64/1500.0; // this is for current limit, different for HV. Now this is in volts
+  // get the DAC to set to that value;
+  if(voltage_on_programming_pin<=4.65){
+    double DAC_value_d=voltage_on_programming_pin/delta_V_DAC;
+    current_cathode=lround(DAC_value_d);
+    CATChannelProgram(current_cathode, 0);
+    //Serial_print_header(voltage_on_programming_pin, DAC_value_d, current_cathode);
+    Serial.println("Cathode Wire Ilim changed");
+  }
+}
 
+void write_the_value_to_HV_P_d(double write_val_d){
+  double voltage_on_programming_pin=write_val_d*4.64/10000.0; // this is for HV, different for current limit. Now this is in volts
+  // get the DAC to set to that value;
+  if(voltage_on_programming_pin<=4.65){
+    double DAC_value_d=voltage_on_programming_pin/delta_V_DAC;
+    voltage_potential=lround(DAC_value_d);
+    POTChannelProgram(voltage_potential, 3);
+    //Serial_print_header(voltage_on_programming_pin, DAC_value_d, voltage_potential);
+    Serial.println("Potential Wire Voltage changed");
+  }
+}
+void write_the_value_to_Pot_Ilim_d(double write_val_d){
+  double voltage_on_programming_pin=write_val_d*4.64/1500.0; // this is for current limit, different for HV. Now this is in volts
+  // get the DAC to set to that value;
+  if(voltage_on_programming_pin<=4.65){
+    double DAC_value_d=voltage_on_programming_pin/delta_V_DAC;
+    current_potential=lround(DAC_value_d);    
+    POTChannelProgram(current_potential, 0);
+    //Serial_print_header(voltage_on_programming_pin, DAC_value_d, current_potential);
+    Serial.println("Potential Wire Ilim changed");
+  }
+}
+void write_HV_d(int which_HV){
+  if(length_sent<=8 && length_sent>=2){ // minimum number of bytes sent for something like ".1" is 2 bytes right?
+      Serial.print("you sent: ");
+      Serial.println(receive);
+      //Serial.println("AHHH");
+      char temp_chars[10];
+      // as an int
+      memcpy((uint8_t *) temp_chars,(uint8_t *) &receive +1, length_sent--);
+      // can also do atof()
+      double write_val_d=atof(temp_chars);
+      //Serial.print("converted to double: ");
+      //Serial.println(write_val_d);
+      new_write=false;
+      if(which_HV==1) write_the_value_to_HV_C_d(write_val_d);
+      else if(which_HV==2) write_the_value_to_HV_P_d(write_val_d);
+      else if(which_HV==3) write_the_value_to_Cat_Ilim_d(write_val_d);
+      else if(which_HV==4) write_the_value_to_Pot_Ilim_d(write_val_d);
+      else Serial.println("choose 1 for Cat HV, 2 for Pot HV, 3 for Cat Ilim, 4 for Pot Ilim");
+  }
+}
+void Serial_print_header(double voltage_pgm, double DAC_d, uint16_t DAC_bits){
+  Serial.print("voltage on pgm pin: ");
+  Serial.println(voltage_pgm);
+  Serial.print("DAC double value: ");
+  Serial.println(DAC_d);
+  Serial.print("DAC int value: ");
+  Serial.println(DAC_bits);
+
+}
 void write_the_value_to_PotA(){
   // need to store it as a uint8_t then write the uint8_t heater sheet array to the serial port
   if(write_val<256 && write_val>=0){
