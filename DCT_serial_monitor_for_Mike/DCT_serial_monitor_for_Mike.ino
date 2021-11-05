@@ -221,7 +221,7 @@ void setup()
   // set all CS to high
   set_CS_all_high();
   delay (1000);
-  /*
+  
   Initialize_TM4C123();
   //delay(200);
   // Setup Thermistors after Initiliazing the SPI and chip selects
@@ -236,7 +236,7 @@ void setup()
   configure_channels((uint8_t)CHIP_SELECT_E);
   configure_global_parameters((uint8_t)CHIP_SELECT_E);
 
- */
+ 
  digitalWrite(LED,LOW);
 
 }
@@ -317,7 +317,7 @@ void loop()
   // do a read based on timer and for the counter and chip_to_read
   // channel number is the pin number from the ltc2983 reading method. 4,8,12,16,20.
   // if counter is 0,5,10,15,20 then read 4, if 1,6,11,16,21 then 8, etc.
-  /*if((long) (millis() - thermsUpdateTime) > 0){
+  if((long) (millis() - thermsUpdateTime) > 0){
     thermsUpdateTime+= THERMS_UPDATE_PERIOD;
     switch(chip_to_read){
       case 0:
@@ -342,11 +342,11 @@ void loop()
       chip_to_read++;
       counter=0;
     }
-    if(chip_to_read>=5) chip_to_read=0;
-    if(counter_all>=25) counter_all=0;    
-    thermistors.Therms[0] = measure_channel((uint8_t)CHIP_SELECT_A, temp_channels[0],TEMPERATURE);
+    if(chip_to_read>=3) chip_to_read=0;
+    if(counter_all>=15) counter_all=0;    
+    //thermistors.Therms[0] = measure_channel((uint8_t)CHIP_SELECT_A, temp_channels[0],TEMPERATURE);
   }
-  */
+
   // read in HV monitoring
   if((long) (millis() - hvmonUpdateTime) > 0){
     hvmonUpdateTime+= HVMON_UPDATE_PERIOD;
@@ -378,12 +378,12 @@ void loop()
     PACKETUpdateTime+= PACKET_UPDATE_PERIOD;
     //Serial.println("INCOMING DATA");
     //Serial.println();
-    Serial.print("P: ");
-    print_PHV_mon();
-    Serial.print("C: ");
-    print_CHV_mon();
+    //Serial.print("P: ");
+    //print_PHV_mon();
+    //Serial.print("C: ");
+    //print_CHV_mon();
     //print_pressure();
-    //print_thermistors();
+    print_thermistors();
     //Serial.println();
     
   }

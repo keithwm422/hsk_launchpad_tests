@@ -9,12 +9,15 @@ using namespace MainHSK_cmd;
 
 #include "src/MainHsk_IU_tests_lib/Flowmeters.h"
 /* structs for storing data from this devices sensors */
-Flowmeters flow_1;
+Flowmeters flows[3];
+int which_flow=0; // 0 is C, 1 is M, 2 is A
 double gasdata[6]={0};
 char gastype[100];
 char errorcode[100];
 int baud_flows =19200;
-const char * flow_ID_1= "M"; // order is mix c argon, where mix and c are on top of eachother (mix is top of the double din connector so is serial 7, carbon is serial 4, bottom of dual connector). Argon is single one (serial6). 
+const char * flow_ID_1= "C"; // order is mix c argon, where mix and c are on top of eachother (mix is top of the double din connector so is serial 7, carbon is serial 4, bottom of dual connector). Argon is single one (serial6). 
+const char * flow_ID_2= "M";
+const char * flow_ID_3= "A";
 sMainFlows mainflows[3];
 sMainFlowsGasString mainflowsgasstring;
 char gas1[100];
@@ -49,15 +52,19 @@ void setup() {
 
   //Flowmeters initializations, flow_1 object instance (should be one instance per flowmeter)
   // Serial connections: 4,6, and 7. 
-  flow_1.begin(Serial7,baud_flows, flow_ID_1);
+  flows[0].begin(Serial4,baud_flows, flow_ID_1);
+  flows[1].begin(Serial7,baud_flows, flow_ID_2);
+  flows[2].begin(Serial6,baud_flows, flow_ID_3);
   FlowmetersUpdateTime = millis() + FLOWMETERS_UPDATE_PERIOD;
   Serial.println("Starting...");
   pinMode(LED,OUTPUT);
   digitalWrite(LED,HIGH);
   LED_time=millis();
-  while(flow_1.available()){ // this will just clear the buffer really.
-    flowmetersBuffer=flow_1.read_byte();
-    Serial.print(flowmetersBuffer);
+  for(int i=0;i<3;i++){
+    while(flows[i].available()){ // this will just clear the buffer really.
+      flowmetersBuffer=flows[i].read_byte();
+      Serial.print(flowmetersBuffer);
+    }
   }
   delay(1000);
 }
@@ -72,8 +79,8 @@ void loop() {
   // read in the flows
   switch(Flowmeters_State){
     case Flowmeters_Idle:{
-      if(flow_1.available()){ // this will just clear the buffer really.
-        flowmetersBuffer=(char)flow_1.read_byte();
+      if(flows[which_flow].available()){ // this will just clear the buffer really.
+        flowmetersBuffer=(char)flows[which_flow].read_byte();
         break;
       }
       else {  // nothing to read so check to see if time to request a read
@@ -86,7 +93,7 @@ void loop() {
       }
     }
     case Flowmeters_Request:{
-      flow_1.poll();
+      flows[which_flow].poll();
       Flowmeters_State=(Flowmeters_State_t) ((unsigned char) Flowmeters_State + 1);
       flowmeters_read_index=0;
       avail_wait_tries=0;
@@ -95,13 +102,13 @@ void loop() {
     }
     case Flowmeters_Available:{
       // setup the chars and the arrays for this flowmeter (probably need to clear something)
-      flow_1.read_setup();
+      flows[which_flow].read_setup();
       Flowmeters_State=(Flowmeters_State_t) ((unsigned char) Flowmeters_State + 1);
       avail_wait_tries=0;
       break;
     }
     case Flowmeters_Read:{
-      int read_long_val=flow_1.read_byte();
+      int read_long_val=flows[which_flow].read_byte();
       if(read_long_val!=-1){
         flowmetersReadArray[flowmeters_read_index]=(char) read_long_val;
         flowmeters_read_index++;
@@ -115,18 +122,20 @@ void loop() {
       }
     }
     case Flowmeters_Read_Complete:{
-      parse_worked=flow_1.getGasData(gasdata,gastype);
+      parse_worked=flows[which_flow].getGasData(gasdata,gastype);
       if(parse_worked){
-        mainflows[0].pressure=gasdata[0];
-        mainflows[0].temperature=gasdata[1];
-        mainflows[0].volume=gasdata[2];
-        mainflows[0].mass=gasdata[3];
-        mainflows[0].setpoint=gasdata[4];
+        mainflows[which_flow].pressure=gasdata[0];
+        mainflows[which_flow].temperature=gasdata[1];
+        mainflows[which_flow].volume=gasdata[2];
+        mainflows[which_flow].mass=gasdata[3];
+        mainflows[which_flow].setpoint=gasdata[4];
         set2=gasdata[5];
         memcpy((uint8_t*) gas,(uint8_t *) gastype,sizeof(gas));
         print_packet();
       }
       Flowmeters_State=Flowmeters_Idle;
+      which_flow++;
+      if(which_flow>=3) which_flow=0;
       break;
     }
   }  
@@ -135,15 +144,15 @@ void loop() {
 void print_packet(){
   Serial.println("Flowmeter data: ");
   Serial.print("Pressure ");
-  Serial.print(mainflows[0].pressure,4);
+  Serial.print(mainflows[which_flow].pressure,4);
   Serial.print(", Temperature ");
-  Serial.print(mainflows[0].temperature,4);
+  Serial.print(mainflows[which_flow].temperature,4);
   Serial.print(", Vol Flow ");
-  Serial.print(mainflows[0].volume,4);
+  Serial.print(mainflows[which_flow].volume,4);
   Serial.print(", Mass Flow ");
-  Serial.print(mainflows[0].mass,4);
+  Serial.print(mainflows[which_flow].mass,4);
   Serial.print(", Setpoint ");
-  Serial.print(mainflows[0].setpoint,4);
+  Serial.print(mainflows[which_flow].setpoint,4);
   Serial.println("  done  ");
 }
 void switch_LED(){
