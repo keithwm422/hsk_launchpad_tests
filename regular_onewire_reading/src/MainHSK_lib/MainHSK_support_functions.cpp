@@ -21,7 +21,19 @@ uint8_t default_address=96;
 MCP4728 dac; // for SSOut dac comms
 DS2482* DS;
 byte data[12];
-byte addr_4[10][8]={0}; // addresses on channel 4 of onewire bridge
+byte addr_4[30][8]=
+{
+  {0x28,0x7B,0xAA,0x79,0x97,0x06,0x03,0xD1},
+  {0x28,0x6A,0xC6,0x79,0x97,0x06,0x03,0x8D},
+  {0x28,0x0E,0xA4,0x79,0x97,0x06,0x03,0x00},
+  {0x28,0x75,0xBC,0x79,0x97,0x06,0x03,0x22},
+  {0x28,0x7C,0x83,0x2B,0x0D,0x00,0x00,0x8A},
+  {0x28,0xCE,0x50,0x2B,0x0D,0x00,0x00,0xF3},
+  {0x28,0xF6,0xE6,0x2A,0x0D,0x00,0x00,0xE3}
+
+};
+//byte addr_4[15][8]={0}; // addresses on channel 4 of onewire bridge
+
 // float max and min temps for SSOut
 // also use DAC resolution (VDD ref).
 float f_max = 125; // 125 degrees celsius
@@ -117,7 +129,7 @@ bool OneWireSetup(uint8_t channel, DS2482& ds1){
     DS->selectChannel(channel);
     byte addr[8]; // to find the addresses and then copy over the found address to the big stored array.    
     int i=0;
-    while(i<10){
+/*    while(i<15){
       if (DS->wireSearch(addr)){
 //        memcpy((uint8_t *) &addr_4[i],(uint8_t *) &addr, sizeof(addr));
           for(int j=0; j<8; j++){
@@ -125,15 +137,15 @@ bool OneWireSetup(uint8_t channel, DS2482& ds1){
           }
       }
       i++;
-    }
+    }*/
     return true;
   }
 }
 
 
 // need to make a function to find all addresses on all channels. 
-void OneWireReturnAddresses(uint8_t * array){
-  memcpy(array,(uint8_t *) &addr_4,sizeof(addr_4));
+void OneWireReturnAddresses(uint8_t * array, int i){
+  memcpy(array,(uint8_t *) &addr_4[i],sizeof(addr_4[i]));
 }
 
 float OneWireReadOneChannel(uint8_t channel, int temp_probe_index, DS2482& ds1){

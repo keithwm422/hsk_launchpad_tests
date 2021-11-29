@@ -32,20 +32,20 @@ void setup() {
   pressure.begin(Serial3,baud_pressure);
   Serial.print("starting...");
   delay(1000);
-  pressure.poll_baud();
+  //pressure.poll_baud();
+  //while(pressure.is_available()){
+    //Serial.print(pressure.get_one_byte());
+  //}
+  pressure.unlock();
   while(pressure.is_available()){
     Serial.print(pressure.get_one_byte());
   }
-//  pressure.unlock();
-//  while(pressure.is_available()){
-//    Serial.print(pressure.get_one_byte());
-//  }
   
-  //pressure.setbaud(new_baud);
-  //Serial.println("changed baud");
-  //while(pressure.is_available()){
-  //  Serial.print(pressure.get_one_byte());
- // }
+  pressure.setbaud(new_baud);
+  Serial.println("changed baud");
+  while(pressure.is_available()){
+    Serial.print(pressure.get_one_byte());
+  }
 
  // pressure.lock();
 //  pressure.read_port_again();
@@ -55,7 +55,7 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly: 
     // idle should check if available, and go to read it if there is something available. otherwise should check the timer to request a new read.
-  switch (Pressure_State){
+/*  switch (Pressure_State){
     case Pressure_Idle:{
       if(pressure.is_available()){ // something was ready to read so go read it
         Pressure_State=Pressure_Read_First;
@@ -141,4 +141,5 @@ void loop() {
       break;
     }
   }
+  */
 }

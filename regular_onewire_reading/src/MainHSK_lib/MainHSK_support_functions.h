@@ -37,7 +37,7 @@ int whatToDoIfTestHeaterControl(uint8_t* data, uint8_t len);
 
 bool OneWireSetup(uint8_t channel, DS2482& ds1);
 
-void OneWireReturnAddresses(uint8_t * array);
+void OneWireReturnAddresses(uint8_t * array, int i);
 
 float OneWireReadOneChannel(uint8_t channel, int temp_probe_index, DS2482& ds1);
 

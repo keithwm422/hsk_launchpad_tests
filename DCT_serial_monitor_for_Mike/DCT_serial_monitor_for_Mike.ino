@@ -223,7 +223,7 @@ void setup()
   delay (1000);
   
   Initialize_TM4C123();
-  //delay(200);
+  delay(200);
   // Setup Thermistors after Initiliazing the SPI and chip selects
   configure_channels((uint8_t)CHIP_SELECT_A);
   configure_global_parameters((uint8_t)CHIP_SELECT_A);
@@ -342,8 +342,8 @@ void loop()
       chip_to_read++;
       counter=0;
     }
-    if(chip_to_read>=3) chip_to_read=0;
-    if(counter_all>=15) counter_all=0;    
+    if(chip_to_read>=5) chip_to_read=0;
+    if(counter_all>=25) counter_all=0;    
     //thermistors.Therms[0] = measure_channel((uint8_t)CHIP_SELECT_A, temp_channels[0],TEMPERATURE);
   }
 

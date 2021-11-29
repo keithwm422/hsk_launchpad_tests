@@ -5,7 +5,7 @@
 //#include "DS2482_nonblocking_v2.h"
 Pressure pressure;
 char response[200]={0};
-int baud_pressure =9600;
+int baud_pressure =115200;
 int new_baud =74880;
 char one_byte;
 char helix[8]="HELIX";
@@ -145,7 +145,7 @@ void loop(){
       if (pressure.is_available()){
         pressureBuffer=pressure.get_one_byte();
         //Serial.print(pressureBuffer);
-        if(pressureBuffer='@'){ // if it is an @ go to more reads, if not check again.
+        if(pressureBuffer=='@'){ // if it is an @ go to more reads, if not check again.
           Pressure_State=(Pressure_State_t) ((unsigned char) Pressure_State + 1);        
           break;
         }
