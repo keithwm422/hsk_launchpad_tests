@@ -2,7 +2,7 @@
 #include "Pressure.h"
 Pressure pressure;
 char response[200]={0};
-int baud_pressure =115200;
+int baud_pressure =19200;
 
 char one_byte;
 char helix[8]="HELIX";
