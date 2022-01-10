@@ -12,6 +12,9 @@ unsigned long LEDUpdateTime=0; // keeping LED to visualize no hanging
 bool is_high=true;
 bool new_write=false;
 int number_bytes_read=0;
+int num_fs=0;
+int bad_reqs=0;
+int good_reqs=0;
 void setup() {
   Serial2.begin(19200);
   // don't do anything else because this should only be sending messages when polled
@@ -27,9 +30,20 @@ void loop() {
     // check how many reads we have had, should be a total of 11 bytes read to then decode the message
     receive[number_bytes_read]=(char) value_read;
     number_bytes_read++;
-    if(number_bytes_read==11){
-      decode_message(number_bytes_read);
-      number_bytes_read=0;
+    if(value_read=='F') num_fs++;
+    if(num_fs>=2){
+      if(number_bytes_read==11){
+        decode_message(number_bytes_read);
+        good_reqs++;
+        number_bytes_read=0;
+        num_fs=0;
+      }
+      else{
+        // we got FFs in the wrong spot, so restart reading arrays completely
+        number_bytes_read=0;
+        num_fs=0;
+        bad_reqs++;
+      }
     }
   }
   if((long) (millis() - LEDUpdateTime) > 0){
@@ -46,16 +60,14 @@ void decode_message(int bytes_read){
     bool is_pressure=check_command();
     if(is_pressure) Serial2.print(send_out_pressure);
     else Serial2.print(send_out_temperature);
-    for(int j=0;j<11;j++){
-      receive[j]=0;
-    }
+    number_bytes_read=0;
   }
   else {
     Serial2.print("Wrong ID");
     Serial2.println(bytes_read,DEC);
     Serial2.println(receive);
     Serial2.println(return_last_3_chars(bytes_read),DEC);
-    delay(1000);
+    number_bytes_read=0;
   }
 }
 bool check_char(int i, char to_check){

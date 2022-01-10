@@ -2,7 +2,7 @@
 uint8_t to_write_array[4]={0};
 uint8_t number=255;
 unsigned long PotUpdateTime=0;
-#define POT_UPDATE_PERIOD 10000
+#define POT_UPDATE_PERIOD 1000
 // for Launchpad LED
 #define LED GREEN_LED
 #define LED_UPDATE_PERIOD 1350
@@ -36,7 +36,7 @@ void loop() {
     //Serial3.write(to_write_array,4);
     Serial3.write(to_write_array,3);
   }
-  delay(10000);
+  //delay(2000);
 }
 void switch_LED(){
   if(is_high){
