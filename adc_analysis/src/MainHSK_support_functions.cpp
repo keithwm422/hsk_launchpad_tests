@@ -180,13 +180,13 @@ bool SSOutSetupSingle(TwoWire_1& wire, uint8_t LDAC,uint8_t addr_i){
   dac.attatch(wire, LDAC); // set the LDAC pin of launchpad and the i2c comms
   dac.setID(default_address+addr_i);
   delayMicroseconds(100);
-  dac.selectVref(MCP4728::VREF::VDD, MCP4728::VREF::VDD, MCP4728::VREF::VDD, MCP4728::VREF::VDD);
-  //dac.selectVref(MCP4728::VREF::INTERNAL_2_8V, MCP4728::VREF::INTERNAL_2_8V, MCP4728::VREF::INTERNAL_2_8V, MCP4728::VREF::INTERNAL_2_8V);
-  //dac.selectGain(MCP4728::GAIN::X1,MCP4728::GAIN::X1,MCP4728::GAIN::X1,MCP4728::GAIN::X1); 
+  //dac.selectVref(MCP4728::VREF::VDD, MCP4728::VREF::VDD, MCP4728::VREF::VDD, MCP4728::VREF::VDD);
+  dac.selectVref(MCP4728::VREF::INTERNAL_2_8V, MCP4728::VREF::INTERNAL_2_8V, MCP4728::VREF::INTERNAL_2_8V, MCP4728::VREF::INTERNAL_2_8V);
+  dac.selectGain(MCP4728::GAIN::X1,MCP4728::GAIN::X1,MCP4728::GAIN::X1,MCP4728::GAIN::X1); 
   dac.analogWrite(0,0,0,0);
-  //dac.readRegisters();
+  dac.readRegisters();
   uint16_t dac_val=0;
-  //for(int j=0;j<4;j++) dac_val=dac_val | dac.getDACData(j);
+  for(int j=0;j<4;j++) dac_val=dac_val | dac.getDACData(j);
   if(dac_val==0) return 1;
   return 0;
 }

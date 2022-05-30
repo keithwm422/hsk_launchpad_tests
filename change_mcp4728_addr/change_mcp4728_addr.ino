@@ -3,18 +3,18 @@
 SoftI2cMaster wire;
 uint8_t SCL_pin = 23;
 uint8_t SDA_pin = 24;
-uint8_t LDAC_pin = 26;
+uint8_t LDAC_pin = 2;
 uint8_t returns;
 
 uint8_t const_byte2=0x61; //0b 0 1 1 0 0 0 0 1
 uint8_t const_byte3=0x62; //0b 0 1 1 0 0 0 1 0
 uint8_t const_byte4=0x63; //0b 0 1 1 0 0 0 1 1
 
-uint8_t curr_addr=0x60; //0b 0 1100 0 0 0
+uint8_t curr_addr=0x63; //0b 0 1100 0 0 0
 uint8_t first_byte=curr_addr << 1;
 uint8_t curr_addr_to_write=(((curr_addr << 3) & 0xFF) >> 1) | const_byte2;
  
-uint8_t new_addr= 0x63; //0b 0 1100 0 0 1
+uint8_t new_addr= 0x60; //0b 0 1100 0 0 1
 uint8_t new_addr_to_write1=(((new_addr << 3) & 0xFF) >> 1) | const_byte3;
 uint8_t new_addr_to_write2=(((new_addr << 3) & 0xFF) >> 1) | const_byte4;
 
