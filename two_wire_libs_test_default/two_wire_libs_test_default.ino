@@ -47,7 +47,7 @@ void setup() {
 //  wire_2->setModule(i2c_3);
 //  wire_1->setModule(i2c_1);
 //  Wire1.begin();
-  wire_2->begin();
+  //wire_2->begin();
   wire_1->begin();
 //  Wire3.begin();
 
@@ -61,7 +61,7 @@ void loop() {
 //    memcpy(test_prio_array,&i, sizeof(i));
     if(one_byte==49) Serial.print("1\n");
     else if(one_byte==50){ //2
-      Serial.print(PCF1(1));
+      Serial.print(PCF1(32));
       Serial.print("2\n");
     }
     else if(one_byte==51){  //3
@@ -96,7 +96,7 @@ uint8_t PCF1(uint8_t to_write){
 //    uint32_t err_from_slave=I2CSend2bytes(base, PCF8574_I2C_ADDRESS_1,1, to_write);
 // change to wire libs
   wire_1->beginTransmission(PCF8574_I2C_ADDRESS_1);
-  wire_1->write(1);
+  wire_1->write(0);
   wire_1->write(to_write);
   return wire_1->endTransmission();
 

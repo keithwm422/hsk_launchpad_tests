@@ -10,12 +10,12 @@ unsigned long LEDUpdateTime=0; // keeping LED to visualize no hanging
 bool is_high=true;
 bool new_write=false;
 void setup() {
-  Serial1.begin(19200);
+  Serial2.begin(115200);
   Serial.begin(115200);
   Serial.println("STARTING");
   // don't do anything else because this should only be sending messages when polled
   pinMode(LED, OUTPUT);
-  Serial1.flush();
+  Serial2.flush();
   digitalWrite(LED,LOW);
 
 }
@@ -27,8 +27,8 @@ void loop() {
     pinMode(BLUE_LED, OUTPUT);
     digitalWrite(BLUE_LED,HIGH);
   }
-  while(Serial1.available()){
-    receive[i]=Serial1.read();
+  while(Serial2.available()){
+    receive[i]=Serial2.read();
     i++;
     if(i>=19) {
         i=0;
@@ -46,24 +46,24 @@ void loop() {
   }
   if(new_write){
     if(receive[0]==254 && receive[1]==171){
-      Serial1.print(receive[0]);
-      Serial1.print(receive[1]);
-      Serial1.print(receive[2]);
+      Serial2.print(receive[0]);
+      Serial2.print(receive[1]);
+      Serial2.print(receive[2]);
       for(int j=0;j<20;j++){
         receive[j]=0;
       }
     }
     else if(receive[0]==254 && receive[1]==170){
-      Serial1.print(receive[0]);
-      Serial1.print(receive[1]);
-      Serial1.print(receive[2]);
-      Serial1.print(receive[3]);
+      Serial2.print(receive[0]);
+      Serial2.print(receive[1]);
+      Serial2.print(receive[2]);
+      Serial2.print(receive[3]);
       for(int j=0;j<20;j++){
         receive[j]=0;
       }
     }
     else{
-      Serial1.print("Wrong ID");
+      Serial2.print("Wrong ID");
       for(int j=0;j<20;j++){
         receive[j]=0;
       }
