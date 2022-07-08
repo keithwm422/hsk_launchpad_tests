@@ -16,7 +16,7 @@ TwoWire * wire_HV= new TwoWire(port_HV);
 // for Launchpad LED
 #define LED GREEN_LED
 // int LED = 15;
-#define LED_UPDATE_PERIOD 4050
+#define LED_UPDATE_PERIOD 2000
 unsigned long LEDUpdateTime=0; // keeping LED to visualize no hanging
 bool is_high=true;
 
@@ -57,82 +57,21 @@ void setup() {
   pinMode(EN_HV,OUTPUT);
   // by default start disabled:
   digitalWrite(EN_HV,LOW);
-
   wire_HV->begin();
-  HVDAC.attach(*wire_HV,0x10);
-  //write_initial();
+  write_initial();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly: 
-  // Read in the values until a carriage return (13)
-  if(Serial.available()){
-    do{
-      receive[char_iter]=Serial.read();
-      //Serial.print(receive[char_iter]);
-      char_iter++;
-      if(receive[char_iter-1]==13){
-        length_sent=char_iter-1;
-        char_iter=0;
-        new_write=true;
-        break;
-      }
-      else {
-        if(char_iter>=10) {
-          length_sent=char_iter;
-          char_iter=0;
-          // reset the characters
-          for(int j=0;j<20;j++){
-            receive[j]=0;
-          }
-          new_write=false;
-          break;
-        }
-     } 
-    } while(Serial.available());
-  }
-  // once we have a value, write it out to the DAC
-  if(new_write){
-    // if "C" for Cathode HV
-    if(receive[0]=='C') write_HV_d(1);
-    // if "P" for Potential HV 
-    else if(receive[0]=='E') EN_CHV(); // for CATHODE ENABLE PIN
-    else if(receive[0]=='D') DIS_CHV(); // for DISABLING CATHODE
-    else if(receive[0]=='Y') EN_PHV(); // for Potential ENABLE PIN
-    else if(receive[0]=='Z') DIS_PHV(); // for DISABLING Potential
-    else if(receive[0]=='P') write_HV_d(2); // for VPGM of Potential
-    else if(receive[0]=='I') write_HV_d(3); // for Ilim of potnetial
-    else if(receive[0]=='J') write_HV_d(4); // for Ilim of Potential
-    else {
-      Serial.println("UNKNOWN COMMAND");
-      new_write=false;
-    }
-    new_write=false;
-    for(int j=0;j<20;j++){
-      receive[j]=0;
-    }    
-  }
 
-  
-  
-  
   if((long) (millis() - LEDUpdateTime) > 0){
     LEDUpdateTime+= LED_UPDATE_PERIOD;
     switch_LED();
-    val1+=1;
-    //step_voltage+=100;
-    if(val1>=255){
-      val2++;
-      val1=0;
-    }
-    if(val2>=255) val2=0;
-    write_step(val1,val2);
+    step_voltage+=1;
     if(step_voltage>=4096){
       step_voltage=0;
     }
-    //HVDAC.analogWrite(step_voltage,0);
+    write_step(step_voltage);
   }
-  
 }
 
 
@@ -149,19 +88,20 @@ void switch_LED(){
 
 void write_initial(){
   wire_HV->beginTransmission(0x10);
-  Serial.println((0x06 << 4) | 0x0F,HEX); // first the command with the address
   wire_HV->write(0x6F);
   wire_HV->write(0);
   wire_HV->write(0);
   wire_HV->endTransmission();  
 }
 
-void write_step(uint8_t first, uint8_t second){
-  wire_HV->beginTransmission(0x10);
-  wire_HV->write(0x31); // 0x30 is ch 0 0x31 is ch1
-  wire_HV->write(first);
-  wire_HV->write(second);
-  wire_HV->endTransmission();  
+void write_step(uint16_t to_write){
+    uint8_t first= (uint8_t)((to_write >> 4) & 0xFF);  // higher bits?
+    uint8_t second= (uint8_t) ((to_write & 0x0F) << 4); // lower bits?
+    wire_HV->beginTransmission(0x10);
+    wire_HV->write(0x31); // 0x30 is ch 0 0x31 is ch1
+    wire_HV->write(first);
+    wire_HV->write(second);
+    wire_HV->endTransmission();
 }
 
 void EN_CHV(){

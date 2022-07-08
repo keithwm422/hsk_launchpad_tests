@@ -100,8 +100,7 @@ uint16_t voltage_cathode=0;
 uint16_t current_potential=0;
 uint16_t current_cathode=0;
 int EN_HV=18;
-bool is_cathode_disabled=true;
-bool is_potential_disabled=true;
+bool is_HV_disabled=true;
 uint32_t hv_read;
 uint8_t which_adc = 0;
 sDCTHV hvmon;
@@ -124,14 +123,15 @@ uint8_t change_all[3]={254,171,0}; // default to zero
 uint8_t change_one[4]={254,170,0,0};
 
 // for Launchpad LED
-#define LED GREEN_LED
+//#define LED GREEN_LED
+int LED=15;
 #define LED_UPDATE_PERIOD 1350
 unsigned long LEDUpdateTime=0; // keeping LED to visualize no hanging
 bool is_high=true;
 float pres_val=0;
 float cat_v=0;
 float conversion_factor=3.3*1406.0/(1000.0*4096.0);
-double delta_V_DAC=5.0/4096.0;
+double delta_V_DAC=4.096/4096.0;
 #define PACKET_UPDATE_PERIOD 2000
 unsigned long PACKETUpdateTime=0; // send reads as packets every period defined above
 char receive[20]; // big anough to store things
@@ -197,10 +197,10 @@ void setup()
   wire_HV->flush();
   // run setup of I2C stuff from support_functions
   wire_HV->beginTransmission(0x10);
-  Serial.println((0x06 << 4) | 0x0F,HEX); // first the command with the address
+  //Serial.println((0x06 << 4) | 0x0F,HEX); // first the command with the address
   wire_HV->write(0x6F);
-  wire_HV->write(0);
-  wire_HV->write(0);
+  wire_HV->write((uint8_t)(0xFF));
+  //wire_HV->write((uint8_t)(0xFF));
   wire_HV->endTransmission();  
 
   //HVSetup(*wire_HV);
@@ -215,8 +215,8 @@ void setup()
   pinMode(CHIP_SELECT_E, OUTPUT);
   // set all CS to high
   set_CS_all_high();
-  delay (10000);
-  
+  delay (1000);
+  /*
   Initialize_TM4C123();
   //delay(200);
   // Setup Thermistors after Initiliazing the SPI and chip selects
@@ -230,11 +230,12 @@ void setup()
   configure_global_parameters((uint8_t)CHIP_SELECT_D);
   configure_channels((uint8_t)CHIP_SELECT_E);
   configure_global_parameters((uint8_t)CHIP_SELECT_E);
- ThermPacketUpdateTime=millis()+THERMPACKET_UPDATE_PERIOD;
- digitalWrite(LED,LOW);
- // set the reading and controlling off by 500ms
- hvmonUpdateTime= millis() + HVMON_UPDATE_PERIOD;
- PACKETUpdateTime+= PACKET_UPDATE_PERIOD/2;
+  */
+  ThermPacketUpdateTime=millis()+THERMPACKET_UPDATE_PERIOD;
+  digitalWrite(LED,LOW);
+  // set the reading and controlling off by 500ms
+  hvmonUpdateTime= millis() + HVMON_UPDATE_PERIOD;
+  PACKETUpdateTime+= PACKET_UPDATE_PERIOD/2;
 
  //raise_PHV();
   //raise_CHV();
@@ -277,10 +278,8 @@ void loop()
     //if(receive[0]=='C') write_HV_d(1);
     if(receive[0]=='C') write_HV(1);
     // if "P" for Potential HV 
-    else if(receive[0]=='E') EN_CHV(); // for CATHODE ENABLE PIN
-    else if(receive[0]=='D') DIS_CHV(); // for DISABLING CATHODE
-    else if(receive[0]=='Y') EN_PHV(); // for Potential ENABLE PIN
-    else if(receive[0]=='Z') DIS_PHV(); // for DISABLING Potential
+    else if(receive[0]=='E') ENABLE_HV(); // for CATHODE ENABLE PIN
+    else if(receive[0]=='D') DIS_HV(); // for DISABLING CATHODE
     else if(receive[0]=='P') write_HV(2); // for VPGM of Potential
     else if(receive[0]=='I') write_HV(3); // for Ilim of potnetial
     else if(receive[0]=='J') write_HV(4); // for Ilim of Potential
@@ -325,7 +324,7 @@ void loop()
 
    if((long) (millis() - thermsUpdateTime) > 0){
     thermsUpdateTime+= THERMS_UPDATE_PERIOD;
-    switch(chip_to_read){
+    /*switch(chip_to_read){
       case 0:
         thermistors.Therms[counter_all] = measure_channel((uint8_t)CHIP_SELECT_A, temp_channels[counter],TEMPERATURE);
         break;
@@ -342,7 +341,7 @@ void loop()
         thermistors.Therms[counter_all] = measure_channel((uint8_t)CHIP_SELECT_E, temp_channels[counter],TEMPERATURE);
         break;
     }
-    
+    */
     counter++;
     counter_all++;
     if(counter>=5){
@@ -384,14 +383,14 @@ void loop()
     //Serial.println();
     Serial.print("P: ");
     print_PHV_mon();
-    Serial.print("C: ");
+    Serial.print(" C: ");
     print_CHV_mon();
     //print_pressure();
     //Serial.println();    
   }
   if((long) (millis() - ThermPacketUpdateTime) > 0){
     ThermPacketUpdateTime+= THERMPACKET_UPDATE_PERIOD;
-    print_thermistors();
+    //print_thermistors();
   }
   if(step_HV_C){
     if((int) voltage_cathode >= CATHODE_VOLTAGE_CUTOFF){
@@ -498,7 +497,10 @@ void print_CHV_mon(){
   Serial.print(",");
   Serial.print(hvmon.CatVmon);
   Serial.print(",");
-  cat_v=hvmon.CatVmon*conversion_factor;
+  Serial.print(hvmon.CatImon);
+  Serial.print("\n");
+  //Serial.print(",");
+/*  cat_v=hvmon.CatVmon*conversion_factor;
   //Serial.print("In Volts out of 4.64 it is: ");
   Serial.print(cat_v,4);
   Serial.print(",");
@@ -513,6 +515,7 @@ void print_CHV_mon(){
   Serial.print(",");
   //Serial.print("SO Current line reads (mA): ");
   Serial.println(cat_v/4.64*1.5,4);
+  */
 }
 void print_PHV_mon(){
     // Potential HV
@@ -520,7 +523,11 @@ void print_PHV_mon(){
   Serial.print(",");
   Serial.print(hvmon.PotVmon);
   Serial.print(",");
-  cat_v=hvmon.PotVmon*conversion_factor;
+  // Potential Current
+  Serial.print(hvmon.PotImon);
+
+  //Serial.print(",");
+  /*cat_v=hvmon.PotVmon*conversion_factor;
   //Serial.print("In Volts out of 4.64 it is: ");
   Serial.print(cat_v,4);
   Serial.print(",");
@@ -535,6 +542,7 @@ void print_PHV_mon(){
   Serial.print(",");
   //Serial.print("SO Current line reads (mA): ");
   Serial.println(cat_v/4.64*1.5,4);
+  */
 }
 
 void print_pressure(){
@@ -555,25 +563,55 @@ void print_thermistors(){
   }
   Serial.println("...done");
 }
-void EN_CHV(){
-  Serial.println("Cathode HV enabled");
+void ENABLE_HV(){
+  Serial.println("HV enabled");
   digitalWrite(EN_HV,HIGH);
-  is_cathode_disabled=false;
+  is_HV_disabled=false;
 }
-void EN_PHV(){
-  Serial.println("Potential HV enabled");
-  digitalWrite(EN_HV,HIGH);
-  is_potential_disabled=false;
-}
-void DIS_CHV(){
-  Serial.println("Cathode HV disabled");
+void DIS_HV(){
+  Serial.println("HV disabled");
   digitalWrite(EN_HV,LOW);
-  is_cathode_disabled=true;
+  is_HV_disabled=true;
 }
-void DIS_PHV(){
-  Serial.println("Potential HV disabled");
-  digitalWrite(EN_HV,LOW);
-  is_potential_disabled=true;
+
+void write_some_val(uint16_t write_shit){
+    uint8_t first= (uint8_t)((write_shit >> 4) & 0xFF);  // higher bits?
+    uint8_t second= (uint8_t) ((write_shit & 0x0F) << 4); // lower bits?
+    wire_HV->beginTransmission(0x10);
+    wire_HV->write(0x31); // 0x30 is ch 0 0x31 is ch1
+    wire_HV->write(first);
+    wire_HV->write(second);
+    wire_HV->endTransmission();
+}
+
+void write_some_valC(uint16_t write_shit){
+    uint8_t first= (uint8_t)((write_shit >> 4) & 0xFF);  // higher bits?
+    uint8_t second= (uint8_t) ((write_shit & 0x0F) << 4); // lower bits?
+    wire_HV->beginTransmission(0x10);
+    wire_HV->write(0x30); // 0x30 is ch 0 0x31 is ch1
+    wire_HV->write(first);
+    wire_HV->write(second);
+    wire_HV->endTransmission();
+}
+
+void write_some_valP(uint16_t write_shit){
+    uint8_t first= (uint8_t)((write_shit >> 4) & 0xFF);  // higher bits?
+    uint8_t second= (uint8_t) ((write_shit & 0x0F) << 4); // lower bits?
+    wire_HV->beginTransmission(0x10);
+    wire_HV->write(0x32); // 0x30 is ch 0 0x31 is ch1
+    wire_HV->write(first);
+    wire_HV->write(second);
+    wire_HV->endTransmission();
+}
+
+void write_some_valPI(uint16_t write_shit){
+    uint8_t first= (uint8_t)((write_shit >> 4) & 0xFF);  // higher bits?
+    uint8_t second= (uint8_t) ((write_shit & 0x0F) << 4); // lower bits?
+    wire_HV->beginTransmission(0x10);
+    wire_HV->write(0x33); // 0x30 is ch 0 0x31 is ch1
+    wire_HV->write(first);
+    wire_HV->write(second);
+    wire_HV->endTransmission();
 }
 
 void write_step_CaTI(uint8_t first, uint8_t second){
@@ -595,18 +633,20 @@ void write_step_POTV(uint8_t first, uint8_t second){
 
 // as integers or percentages
 void write_the_value_to_HV_C(){
-  int number = ceil(write_val*4096.0/100.0);
+  //int number = ceil(write_val*4096.0/100.0);
+  int number = write_val;
   if(number <=4095 && number>=0){
     memcpy((uint8_t * ) &voltage_cathode, (uint8_t *)&number, sizeof(voltage_cathode));
     //CATChannelProgram(voltage_cathode, 0);
-
+    write_some_valC(voltage_cathode);
+/*
     uint8_t first= (uint8_t)(voltage_cathode >> 8);  // higher bits?
     uint8_t second= (uint8_t) (voltage_cathode & 0x00FF); // lower bits?
     wire_HV->beginTransmission(0x10);
     wire_HV->write(0x30); // 0x30 is ch 0 0x31 is ch1
     wire_HV->write(100);
     wire_HV->write(100);
-    wire_HV->endTransmission();
+    wire_HV->endTransmission();*/
     Serial.println("Cathode Wire Voltage changed");
 
   }
@@ -632,18 +672,21 @@ void write_the_value_to_Cat_Ilim(){
 }
 
 void write_the_value_to_HV_P(){
-  int number = ceil(write_val*4096.0/100.0);
+//  int number = ceil(write_val*4096.0/100.0);
+  int number = write_val;
   if(number <=4095 && number>=0){
     memcpy((uint8_t * ) &voltage_potential, (uint8_t *)&number, sizeof(voltage_potential));
-    POTChannelProgram(voltage_potential, 2);
+    write_some_valP(voltage_potential);
+    //POTChannelProgram(voltage_potential, 2);
     Serial.println("Potential Wire Voltage changed");
   }
 }
 void write_the_value_to_Pot_Ilim(){
-  int number = ceil(write_val*4096.0/100.0);
+  int number = write_val;
   if(number <=4095 && number>=0){
     memcpy((uint8_t * ) &current_potential, (uint8_t *)&number, sizeof(current_potential));
-    POTChannelProgram(current_potential, 3);
+    write_some_valPI(current_potential);
+    //POTChannelProgram(current_potential, 3);
     Serial.println("Potential Wire Ilim changed");
   }
 }
@@ -670,7 +713,7 @@ void write_HV(int which_HV){
 }
 
 // as doubles of microamps or Volts
-/*void write_the_value_to_HV_C_d(double write_val_d){
+void write_the_value_to_HV_C_d(double write_val_d){
   double voltage_on_programming_pin=write_val_d*4.64/10000.0; // this is for HV, different for current limit. Now this is in volts
   // get the DAC to set to that value;
   if(voltage_on_programming_pin<=4.65){
@@ -735,7 +778,6 @@ void write_HV_d(int which_HV){
       else Serial.println("choose 1 for Cat HV, 2 for Pot HV, 3 for Cat Ilim, 4 for Pot Ilim");
   }
 }
-*/
 void Serial_print_header(double voltage_pgm, double DAC_d, uint16_t DAC_bits){
   Serial.print("voltage on pgm pin: ");
   Serial.println(voltage_pgm);

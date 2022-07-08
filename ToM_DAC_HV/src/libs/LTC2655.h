@@ -73,8 +73,8 @@ public:
       reg_[(uint8_t) channel].data=value;
       uint8_t data[3]={0};
       // some fancy bitshifts to a uint16_t
-      data[1] = (uint8_t) (value >> 8); // should be the MSByte
-      data[2] = (uint8_t) ((value & 0x00FF)); // should be the MSByte
+      data[1] = (uint8_t) ((value >> 4) & 0x0FF); // should be the MSByte
+      data[2] = (uint8_t) ((value & 0x0F) << 4); // should be the LSnibble
       data[0] = ((uint8_t) CMD::WRITE_AND_UPDATE_N << 4) | (uint8_t) (channel); // first the command with the address
       wire_->beginTransmission(addr_);
       wire_->write(data[0]);
