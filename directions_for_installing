@@ -44,7 +44,7 @@ Install the [Energia IDE](http://energia.nu/download/) on your PC.
 To gain access to the Device micro-usb port, the Launchpad must first be flashed with a compiled-binary sketch. This enables the board to change its bootloader. A binary flashing program like [UniFlash](http://www.ti.com/tool/uniflash) or, on Windows, [LM Flash Programmer](http://www.ti.com/tool/LMFLASHPROGRAMMER) will work.
 
 1. Open a sketch on Energia and attach a Launchpad to the PC through the Launchpad's Debugging micro-usb port (with the switch in debugging mode).
-2. Under `Tools`->`Board: `, make sure that the `Arduino-Tiva 80 MHz` option is chosen.
+2. Under `Tools`->`Board: `, make sure that the correct board is selected (i.e. `LaunchPad (Tiva C) w/ tm4c123 (80 MHz)`, `Arduino-Tiva 80 MHz`, etc.).
 3. Export the compiled binary by `Sketch`->`Export compiled binary`. You should find the new .bin file in your sketch folder.
 * (If Uniflash) Select the board TM4C123GXL. Continue, and under `Flash image(s)` select the .bin file you just created and click `Load Image`. If all goes well, there should be a 'Program success' message in the terminal at the bottom.
 * (If LM Flash) Select the board TM4C123G. Under `Program` select the .bin file you just created and click `Program`.
