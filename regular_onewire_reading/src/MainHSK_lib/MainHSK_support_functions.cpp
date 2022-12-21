@@ -196,85 +196,85 @@ float OneWireReadOneChannel(uint8_t channel, int temp_probe_index, DS2482& ds1){
   return celsius;
 }
 
-// // returns 0 if one of the DAC's can't be set to 0 (and doesn't read 0).
-// bool SSOutSetupSingle(TwoWire_1& wire, uint8_t LDAC,uint8_t addr_i){
-//   dac.attatch(wire, LDAC); // set the LDAC pin of launchpad and the i2c comms
-//   dac.setID(default_address+addr_i);
-//   delayMicroseconds(100);
-//   dac.selectVref(MCP4728::VREF::VDD, MCP4728::VREF::VDD, MCP4728::VREF::VDD, MCP4728::VREF::VDD);
-//   dac.analogWrite(0,0,0,0);
-//   dac.readRegisters();
-//   uint16_t dac_val=0;
-//   for(int j=0;j<4;j++) dac_val=dac_val | dac.getDACData(j);
-//   if(dac_val==0) return 1;
-//   return 0;
-// }
+// returns 0 if one of the DAC's can't be set to 0 (and doesn't read 0).
+bool SSOutSetupSingle(TwoWire_1& wire, uint8_t LDAC,uint8_t addr_i){
+  dac.attatch(wire, LDAC); // set the LDAC pin of launchpad and the i2c comms
+  dac.setID(default_address+addr_i);
+  delayMicroseconds(100);
+  dac.selectVref(MCP4728::VREF::VDD, MCP4728::VREF::VDD, MCP4728::VREF::VDD, MCP4728::VREF::VDD);
+  dac.analogWrite(0,0,0,0);
+  dac.readRegisters();
+  uint16_t dac_val=0;
+  for(int j=0;j<4;j++) dac_val=dac_val | dac.getDACData(j);
+  if(dac_val==0) return 1;
+  return 0;
+}
 
-// // returns 0 if one of the DAC's can't be set to 0 (and doesn't read 0).
-// bool SSOutSetup(TwoWire_1& wire, uint8_t LDAC){
-//   bool return_val;
-//   uint8_t i=0;
-//   while(i<8){
-//     SSOutSetupSingle(wire,LDAC,i);
-//     i++;
-//   }
-//   return true;
-// }
+// returns 0 if one of the DAC's can't be set to 0 (and doesn't read 0).
+bool SSOutSetup(TwoWire_1& wire, uint8_t LDAC){
+  bool return_val;
+  uint8_t i=0;
+  while(i<8){
+    SSOutSetupSingle(wire,LDAC,i);
+    i++;
+  }
+  return true;
+}
 
-// bool SSOutProgram(uint16_t * data){
-//   uint8_t i=0;
-//   while(i<8){
-//     dac.setID(default_address+i);
-//     delayMicroseconds(100);
-//     dac.analogWrite(*data,*data,*data,*data);
-//     i++;
-//   }
-//   delayMicroseconds(100);
-//   return 1;
-// }
+bool SSOutProgram(uint16_t * data){
+  uint8_t i=0;
+  while(i<8){
+    dac.setID(default_address+i);
+    delayMicroseconds(100);
+    dac.analogWrite(*data,*data,*data,*data);
+    i++;
+  }
+  delayMicroseconds(100);
+  return 1;
+}
 
-// bool SSOutChannelProgram(uint16_t data, uint8_t address, uint8_t channel){
-//   dac.setID(default_address+address);
-//   dac.analogWrite(channel, data);
-//   return 1;
-// }
+bool SSOutChannelProgram(uint16_t data, uint8_t address, uint8_t channel){
+  dac.setID(default_address+address);
+  dac.analogWrite(channel, data);
+  return 1;
+}
 
 
-// uint16_t SSOut_float_temp_to_volt(float val){
-//   float number=(val-f_min)/delta_f;
-//   int rounded = round(number);
-//   uint16_t return_val = (uint16_t) rounded;
-//   return return_val;
-// //  (val-f_low)/(delta_f);  
-// }
+uint16_t SSOut_float_temp_to_volt(float val){
+  float number=(val-f_min)/delta_f;
+  int rounded = round(number);
+  uint16_t return_val = (uint16_t) rounded;
+  return return_val;
+//  (val-f_low)/(delta_f);  
+}
 
-// void convert_DAC_outputs(SSOut_vals_t * SSOut_values_DAC_ptr, uint16_t * SSOut_volts){
-//   for(int i=0;i<10;i++){
-//     *(SSOut_volts+i)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->DCTTemp[i]);
-//   }
-//   *(SSOut_volts+10)=SSOut_values_DAC_ptr->DCTPressureReference;
-//   *(SSOut_volts+11)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->Magnet1);
-//   *(SSOut_volts+12)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->Magnet2);
-//   *(SSOut_volts+13)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->Power1);
-//   *(SSOut_volts+14)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->Power2);
-//   *(SSOut_volts+15)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->RICH1);
-//   *(SSOut_volts+16)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->RICH2);
-//   *(SSOut_volts+17)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->Last);
+void convert_DAC_outputs(SSOut_vals_t * SSOut_values_DAC_ptr, uint16_t * SSOut_volts){
+  for(int i=0;i<10;i++){
+    *(SSOut_volts+i)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->DCTTemp[i]);
+  }
+  *(SSOut_volts+10)=SSOut_values_DAC_ptr->DCTPressureReference;
+  *(SSOut_volts+11)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->Magnet1);
+  *(SSOut_volts+12)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->Magnet2);
+  *(SSOut_volts+13)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->Power1);
+  *(SSOut_volts+14)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->Power2);
+  *(SSOut_volts+15)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->RICH1);
+  *(SSOut_volts+16)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->RICH2);
+  *(SSOut_volts+17)=SSOut_float_temp_to_volt(SSOut_values_DAC_ptr->Last);
 
-// }
+}
 
-// void SSOutProgram_all(uint16_t * out){
-//   uint8_t incrementer=0;
-//   for (int i =0; i<8; i++){
-//     dac.setID(default_address+i);
-//     dac.analogWrite(*(out+incrementer),*(out+incrementer+1),*(out+incrementer+2), *(out+incrementer+3));
-//     incrementer=i+4;
-//   }
-// }
-// // the passed values are the data, the address to use is in the array address_map, and the channel is in channel_map;
-// void SSOutProgram_flight(SSOut_vals_t * SSOut_values_DAC_ptr, uint16_t * SSOut_volts){
-//   convert_DAC_outputs(SSOut_values_DAC_ptr, SSOut_volts);
-//   for(int i=0;i<10;i++){
-//     SSOutChannelProgram(*(SSOut_volts+i), address_map[i], channel_map[i]);
-//   }
-//}
+void SSOutProgram_all(uint16_t * out){
+  uint8_t incrementer=0;
+  for (int i =0; i<8; i++){
+    dac.setID(default_address+i);
+    dac.analogWrite(*(out+incrementer),*(out+incrementer+1),*(out+incrementer+2), *(out+incrementer+3));
+    incrementer=i+4;
+  }
+}
+// the passed values are the data, the address to use is in the array address_map, and the channel is in channel_map;
+void SSOutProgram_flight(SSOut_vals_t * SSOut_values_DAC_ptr, uint16_t * SSOut_volts){
+  convert_DAC_outputs(SSOut_values_DAC_ptr, SSOut_volts);
+  for(int i=0;i<10;i++){
+    SSOutChannelProgram(*(SSOut_volts+i), address_map[i], channel_map[i]);
+  }
+}
