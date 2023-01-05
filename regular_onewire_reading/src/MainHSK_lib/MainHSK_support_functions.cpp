@@ -21,18 +21,11 @@ uint8_t default_address=96;
 MCP4728 dac; // for SSOut dac comms
 DS2482* DS;
 byte data[12];
-byte addr_4[30][8]=
-{
-  {0x28,0x7B,0xAA,0x79,0x97,0x06,0x03,0xD1},
-  {0x28,0x6A,0xC6,0x79,0x97,0x06,0x03,0x8D},
-  {0x28,0x0E,0xA4,0x79,0x97,0x06,0x03,0x00},
-  {0x28,0x75,0xBC,0x79,0x97,0x06,0x03,0x22},
-  {0x28,0x7C,0x83,0x2B,0x0D,0x00,0x00,0x8A},
-  {0x28,0xCE,0x50,0x2B,0x0D,0x00,0x00,0xF3},
-  {0x28,0xF6,0xE6,0x2A,0x0D,0x00,0x00,0xE3}
 
-};
-//byte addr_4[15][8]={0}; // addresses on channel 4 of onewire bridge
+#define numMaxTempSensors 30
+#define numChannels 8
+#define numAddrBytes 8
+byte allAddr[numChannels][numMaxTempSensors][numAddrBytes] = {0};
 
 // float max and min temps for SSOut
 // also use DAC resolution (VDD ref).
@@ -126,26 +119,48 @@ bool OneWireSetup(uint8_t channel, DS2482& ds1){
     return false; 
   } 
   else {
+    OneWireFindAddresses(DS);
     DS->selectChannel(channel);
-    byte addr[8]; // to find the addresses and then copy over the found address to the big stored array.    
-    int i=0;
-/*    while(i<15){
-      if (DS->wireSearch(addr)){
-//        memcpy((uint8_t *) &addr_4[i],(uint8_t *) &addr, sizeof(addr));
-          for(int j=0; j<8; j++){
-            addr_4[i][j]=addr[j];
-          }
-      }
-      i++;
-    }*/
     return true;
   }
 }
 
+// find all addresses on all channels
+void OneWireFindAddresses(DS2482* ds1){
 
-// need to make a function to find all addresses on all channels. 
-void OneWireReturnAddresses(uint8_t * array, int i){
-  memcpy(array,(uint8_t *) &addr_4[i],sizeof(addr_4[i]));
+  DS=ds1;
+  
+  byte currentlyCopiedAddr[numAddrBytes]; // short term address storage
+
+  // go through each channel
+  for (int activeChan=0; activeChan<numChannels; activeChan++) {
+
+    DS->selectChannel(activeChan);
+    DS->wireResetSearch();
+    
+    // go through each sensor per channel
+    int activeSensor = 0;
+    while (activeSensor<numMaxTempSensors) {
+      // copy the address if one is found
+      if (DS->wireSearch(currentlyCopiedAddr)){
+	memcpy((uint8_t *) &allAddr[activeChan][activeSensor],(uint8_t *) &currentlyCopiedAddr, sizeof(currentlyCopiedAddr));
+	for(int addrByte=0;addrByte<numAddrBytes;addrByte++){
+	  allAddr[activeChan][activeSensor][addrByte] = currentlyCopiedAddr[addrByte];
+	}
+	activeSensor++;
+      }
+      else { // if no (more) sensor found, move on
+	break;
+      }
+    }
+  }
+}
+
+void OneWireCopyAddress(byte* returnAddr, uint8_t channel, int sensor_index){
+  // memcpy((uint8_t *) &returnAddr,(uint8_t *) &allAddr[channel][sensor_index], sizeof(allAddr[channel][sensor_index]));
+  for(int addrByte=0;addrByte<numAddrBytes;addrByte++){
+    returnAddr[addrByte] = allAddr[channel][sensor_index][addrByte];
+  }
 }
 
 float OneWireReadOneChannel(uint8_t channel, int temp_probe_index, DS2482& ds1){
@@ -154,23 +169,16 @@ float OneWireReadOneChannel(uint8_t channel, int temp_probe_index, DS2482& ds1){
   // need to select the channel of the onewirebridge device before doing any reads.
   DS->selectChannel(channel);
 
-/*
   byte addr[8];
-  float celsius;
-  if (DS.wireSearch(addr)){
-    memcpy(&addr_1,(uint8_t *) &addr, sizeof(addr));
-  }
-*/
-  byte addr[8];
-  for(int i=0; i<8;i++) addr[i]=addr_4[temp_probe_index][i];
+  for(int i=0; i<8;i++) addr[i]=allAddr[channel][temp_probe_index][i];
   float celsius;
   DS->wireReset();
   DS->wireSelect(addr);
   DS->wireWriteByte(0x44);
-  delay(100);       // maybe 750ms is enough, maybe not
+  delay(750);       // maybe 750ms is enough, maybe not
   DS->wireReset();
   DS->wireSelect(addr);
-  DS->wireWriteByte(0xBE);  
+  DS->wireWriteByte(0xBE); 
   for (int i=0;i<9;i++){
     data[i]=DS->wireReadByte();
   }
@@ -183,7 +191,7 @@ float OneWireReadOneChannel(uint8_t channel, int temp_probe_index, DS2482& ds1){
     raw = raw & ~3; // 10 bit res, 187.5 ms
   else if (cfg == 0x40)
     raw = raw & ~1; // 11 bit res, 375 ms
-  //// default is 12 bit resolution, 750 ms conversion time
+  // default is 12 bit resolution, 750 ms conversion time
   celsius = (float)raw / 16.0;
   return celsius;
 }
