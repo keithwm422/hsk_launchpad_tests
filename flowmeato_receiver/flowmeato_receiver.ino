@@ -6,10 +6,10 @@ uint8_t send_out_real[4]={0,0,0,0};
 int i=0;
 void setup() {
   Serial.begin(115200);
-  Serial1.begin(115200);
+  Serial2.begin(115200);
   delay(1000);
     Serial.print("hello");
-    Serial1.print("A\r");
+    Serial2.print("A\r");
 
   // don't do anything else because this should only be sending messages when polled
 }

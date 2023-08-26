@@ -10,7 +10,7 @@ unsigned long LEDUpdateTime=0; // keeping LED to visualize no hanging
 bool is_high=true;
 bool new_write=false;
 void setup() {
-  Serial1.begin(115200);
+  Serial2.begin(115200);
   // don't do anything else because this should only be sending messages when polled
   pinMode(LED, OUTPUT);
   digitalWrite(LED,LOW);
@@ -18,8 +18,8 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly
-  while(Serial1.available()){
-    receive[i]=Serial1.read();
+  while(Serial2.available()){
+    receive[i]=Serial2.read();
     if(receive[i]==13){
       i=0;
       new_write=true;
@@ -39,13 +39,13 @@ void loop() {
   }
   if(new_write){
     if(receive[0]==65){
-      Serial1.print(send_out);
+      Serial2.print(send_out);
       for(int j=0;j<10;j++){
         receive[j]=0;
       }
     }
     else{
-      Serial1.print("Wrong ID");
+      Serial2.print("Wrong ID");
       delay(1000);
     }
     new_write=false;
