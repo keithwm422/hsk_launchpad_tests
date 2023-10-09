@@ -12,8 +12,12 @@
 //#include "Wire.h"
 #include "LTC2655.h"
 #include "MCP3021.h"
+#include "DAC7678.h"
+
 MCP3021 pressure_adc;
 LTC2655 HVDAC;
+DAC7678 dac(0x48);                    // Set the DAC address to 0x48 (72 in decimal)
+unsigned int Heater_vref = 5000;             // Voltage reference value for calculations (set to 5000 for internal reference)
 
 /* Buffer for outgoing data */
 uint8_t outgoingData [255] = {0};
@@ -103,6 +107,25 @@ bool PressureSetup(TwoWire& wire){
   return 0;
 }
 
+bool HeaterSetup(TwoWire& wire){
+  dac.begin(wire);                        // Initialize the DAC
+  dac.setVREF(INT);    
+}
+
+bool HeaterExecute(int set_value){
+    unsigned int Heater_read_value;
+    float heater_voltage;
+    dac.enable();                    // Power up all DAC Channels
+    dac.set(set_value);                       // Write the value to all DAC channels
+    dac.set(1, set_value / 2);                // Write half the value to DAC channel 1  
+    //Heater_read_value = dac.readDAC(0);              // Read value of DAC channel 0
+    //heater_voltage = Heater_read_value * (Heater_vref / 4095.0);   // Calculate voltage output according to the voltage reference
+    //Heater_read_value = dac.readDAC(1);              // Read value of DAC channel 0
+    //heater_voltage = Heater_read_value * (Heater_vref / 4095.0);   // Calculate voltage output according to the voltage reference
+    dac.disable();                  // Power down all DAC channels
+    //delay(5000);
+    return 0;    
+}
 uint16_t PressureRead(){
   return pressure_adc.readADC();
 }

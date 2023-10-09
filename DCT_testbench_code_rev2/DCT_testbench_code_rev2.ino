@@ -91,6 +91,8 @@ TwoWire * wire_HV = &Wire1;
 sDCTPressure dct_pressure;
 #define PRESSURE_UPDATE_PERIOD 2000
 unsigned long pressureUpdateTime=0; // keeping time for the sensor check/write
+// for new Heaters
+TwoWire * wire_Heater = &Wire3;
 
 // FOR HV (channel D(3) of MCP4728 is VPGM (for both) and channel A(0) is IPGM (for both).
 //uint8_t cat_LDAC=14; // pin 2 of launchpad is the LDAC pin we use here. 
@@ -126,9 +128,9 @@ uint8_t change_all[3]={254,171,0}; // default to zero
 uint8_t change_one[4]={254,170,0,0};
 
 // for Launchpad LED
-//#define LED GREEN_LED
-int LED=15;
-#define LED_UPDATE_PERIOD 1350
+#define LED GREEN_LED
+//int LED=15;
+#define LED_UPDATE_PERIOD 5050
 unsigned long LEDUpdateTime=0; // keeping LED to visualize no hanging
 bool is_high=true;
 float pres_val=0;
@@ -164,6 +166,11 @@ double cathode_volt_FS=9975.0; // in volts
 double cathode_current_FS=1496.0; // in microamps
 double potential_volt_FS=3994.0; // in volts
 double potential_current_FS=102.0; // in microamps
+
+unsigned int vref = 5000;             // Voltage reference value for calculations (set to 5000 for internal reference)
+unsigned int Heater_read_value = 0;          // Value read from DAC
+float heater_voltage = 0;                    // Read voltage
+
 
 /*******************************************************************************
 * Main program
@@ -208,9 +215,12 @@ void setup()
 // The DACs on I2C on ports 1 and 3 have an LDAC pin that goes to 17 (LDAC Potential DAC) and 14 (LDAC Cathode DAC) 
 // which can be used if programming the DACs address and updating output registers.
   wire_pressure->begin();
-  wire_HV->begin();
+  wire_Heater->begin();
+  HeaterSetup(*wire_Heater);                        // Initialize the DAC
+
+  //wire_HV->begin();
   // run setup of I2C stuff from support_functions
-  HVSetup(*wire_HV,address_hvdac);
+  //HVSetup(*wire_HV,address_hvdac);
   PressureSetup(*wire_pressure);
   delay(100);
   // Setup thermistors reads
@@ -379,7 +389,7 @@ void loop()
   if((long) (millis() - LEDUpdateTime) > 0){
     LEDUpdateTime+= LED_UPDATE_PERIOD;
     switch_LED();
-    
+    HeaterExecute(400);
   }
   if((long) (millis() - PACKETUpdateTime) > 0){
     PACKETUpdateTime+= PACKET_UPDATE_PERIOD;

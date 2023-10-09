@@ -25,6 +25,10 @@ int whatToDoIfThermistors(uint8_t* respData);
 // for Pressure ADC
 bool PressureSetup(TwoWire& wire);
 
+bool HeaterSetup(TwoWire& wire);
+
+bool HeaterExecute(int set_value);
+
 uint16_t PressureRead();
 
 bool HVAllZero();
