@@ -98,7 +98,7 @@ TwoWire * wire_Heater = &Wire3;
 //uint8_t cat_LDAC=14; // pin 2 of launchpad is the LDAC pin we use here. 
 //uint8_t pot_LDAC=17; // pin 2 of launchpad is the LDAC pin we use here. 
 unsigned long hvmonUpdateTime=0; // keeping time for the sensor check/write
-#define HVMON_UPDATE_PERIOD 100
+#define HVMON_UPDATE_PERIOD 10000
 uint16_t voltage_potential=0;
 uint16_t voltage_cathode=0;
 uint16_t current_potential=0;
@@ -171,7 +171,8 @@ unsigned int vref = 5000;             // Voltage reference value for calculation
 unsigned int Heater_read_value = 0;          // Value read from DAC
 float heater_voltage = 0;                    // Read voltage
 
-
+uint16_t _value=2048;
+int status_heaters=0;
 /*******************************************************************************
 * Main program
 *******************************************************************************/
@@ -215,13 +216,27 @@ void setup()
 // The DACs on I2C on ports 1 and 3 have an LDAC pin that goes to 17 (LDAC Potential DAC) and 14 (LDAC Cathode DAC) 
 // which can be used if programming the DACs address and updating output registers.
   wire_pressure->begin();
+  Serial.print("wire pressure begin \n");
   wire_Heater->begin();
-  HeaterSetup(*wire_Heater);                        // Initialize the DAC
-
+  Serial.print("wire heater begin \n");
+  wire_Heater->beginTransmission(0x48);
+  wire_Heater->write(0x70);
+  wire_Heater->write(0x00);
+  wire_Heater->write(0x00);
+  wire_Heater->endTransmission();
+  //HeaterSetup(*wire_Heater);
+  Serial.print("heater setup \n");
+  //transmit(CMD_INTREF_RS, 0x00, lsdb);
+  wire_Heater->beginTransmission(0x48);
+  wire_Heater->write(0x80);
+  wire_Heater->write(0x00);
+  wire_Heater->write(0x10);
+  wire_Heater->endTransmission();  
   //wire_HV->begin();
   // run setup of I2C stuff from support_functions
   //HVSetup(*wire_HV,address_hvdac);
   PressureSetup(*wire_pressure);
+  Serial.print("pressure setup \n");
   delay(100);
   // Setup thermistors reads
   // chip selects setup here and set to all high
@@ -234,6 +249,7 @@ void setup()
   set_CS_all_high();
   delay (1000);
   Initialize_TM4C123();
+  Serial.print("Initialized tm4c123 \n");
   //delay(200);
   // Setup Thermistors after Initiliazing the SPI and chip selects
   configure_channels((uint8_t)CHIP_SELECT_A);
@@ -247,6 +263,8 @@ void setup()
   configure_channels((uint8_t)CHIP_SELECT_E);
   configure_global_parameters((uint8_t)CHIP_SELECT_E);
   ThermPacketUpdateTime=millis()+THERMPACKET_UPDATE_PERIOD;
+  Serial.print("configured temps\n");
+
   digitalWrite(LED,LOW);
   // set the reading and controlling off by 500ms
   hvmonUpdateTime= millis() + HVMON_UPDATE_PERIOD;
@@ -339,6 +357,7 @@ void loop()
 
    if((long) (millis() - thermsUpdateTime) > 0){
     thermsUpdateTime+= THERMS_UPDATE_PERIOD;
+    Serial.print("Reading therm channel \n");
     switch(chip_to_read){
       case 0:
         thermistors.Therms[counter_all] = measure_channel((uint8_t)CHIP_SELECT_A, temp_channels[counter],TEMPERATURE);
@@ -365,10 +384,13 @@ void loop()
     if(chip_to_read>=5) chip_to_read=0;
     if(counter_all>=25) counter_all=0;    
     //thermistors.Therms[0] = measure_channel((uint8_t)CHIP_SELECT_E, temp_channels[4],TEMPERATURE);
+    Serial.print("Done reading therm channel\n");
   }
   // read in HV monitoring
   if((long) (millis() - hvmonUpdateTime) > 0){
     hvmonUpdateTime+= HVMON_UPDATE_PERIOD;
+    Serial.print("hv monitoring\n");
+
     switch(which_adc){
       case 0: hvmon.PotVmon=(uint16_t) analogRead(A4); // VMON potential
       case 1: hvmon.PotImon=(uint16_t) analogRead(A2); // IMON potential
@@ -378,18 +400,46 @@ void loop()
     }
     which_adc++;
     if(which_adc>=4) which_adc=0;
-
+    Serial.print("done hv monitoring\n");
   }
   // read in pressure
   if((long) (millis() - pressureUpdateTime) > 0){
     pressureUpdateTime+= PRESSURE_UPDATE_PERIOD;
+    Serial.print("pressure reading\n");
     dct_pressure.Pressure_vessel=PressureRead();
-    
+    Serial.print("done pressure reading \n");
   }
   if((long) (millis() - LEDUpdateTime) > 0){
     LEDUpdateTime+= LED_UPDATE_PERIOD;
     switch_LED();
-    HeaterExecute(400);
+    Serial.print("Heater executing \n");
+    //HeaterExecute(400);
+    //transmit(CMD_POWER_DOWN, 0x1F, 0xE0);
+    wire_Heater->beginTransmission(0x48);
+    wire_Heater->write(0x40);
+    wire_Heater->write(0x1F);
+    wire_Heater->write(0xE0);
+    wire_Heater->endTransmission();
+    Serial.print("done heater executing \n");
+    if(status_heaters==0){
+      _value=2048;
+      status_heaters+=1;
+    }
+    else{
+      _value=2866;
+      status_heaters=0;
+    }
+    unsigned char _channel=6;
+    unsigned char _command = 0x30 + _channel;
+    unsigned char msdb = _value>>4;
+    unsigned char lsdb  = (_value << 4) & 0xF0;
+    //transmit(_command, msdb, lsdb);
+    wire_Heater->beginTransmission(0x48);
+    wire_Heater->write(_command);
+    wire_Heater->write(msdb);
+    wire_Heater->write(lsdb);
+    wire_Heater->endTransmission();
+    
   }
   if((long) (millis() - PACKETUpdateTime) > 0){
     PACKETUpdateTime+= PACKET_UPDATE_PERIOD;
