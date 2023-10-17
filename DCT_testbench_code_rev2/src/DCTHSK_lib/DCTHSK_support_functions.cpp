@@ -16,7 +16,7 @@
 
 MCP3021 pressure_adc;
 LTC2655 HVDAC;
-DAC7678 dac(0x48);                    // Set the DAC address to 0x48 (72 in decimal)
+DAC7678 dac;                    // Set the DAC address to 0x48 (72 in decimal)
 unsigned int Heater_vref = 5000;             // Voltage reference value for calculations (set to 5000 for internal reference)
 
 /* Buffer for outgoing data */
@@ -108,22 +108,14 @@ bool PressureSetup(TwoWire& wire){
 }
 
 bool HeaterSetup(TwoWire& wire){
-  dac.begin(wire);                        // Initialize the DAC
-  dac.setVREF(INT);    
+  dac.begin(wire,0x48);                        // Initialize the DAC
+  dac.setVREF();
+  dac.enable();              // Power up all DAC Channels
+  return 0;
 }
 
-bool HeaterExecute(int set_value){
-    unsigned int Heater_read_value;
-    float heater_voltage;
-    dac.enable();                    // Power up all DAC Channels
-    dac.set(set_value);                       // Write the value to all DAC channels
-    dac.set(1, set_value / 2);                // Write half the value to DAC channel 1  
-    //Heater_read_value = dac.readDAC(0);              // Read value of DAC channel 0
-    //heater_voltage = Heater_read_value * (Heater_vref / 4095.0);   // Calculate voltage output according to the voltage reference
-    //Heater_read_value = dac.readDAC(1);              // Read value of DAC channel 0
-    //heater_voltage = Heater_read_value * (Heater_vref / 4095.0);   // Calculate voltage output according to the voltage reference
-    dac.disable();                  // Power down all DAC channels
-    //delay(5000);
+bool HeaterExecute(unsigned char _channel, uint16_t set_value){
+    dac.set(_channel,set_value);        // Write the value to all DAC channels
     return 0;    
 }
 uint16_t PressureRead(){

@@ -27,7 +27,7 @@ bool PressureSetup(TwoWire& wire);
 
 bool HeaterSetup(TwoWire& wire);
 
-bool HeaterExecute(int set_value);
+bool HeaterExecute(unsigned char _channel, uint16_t set_value);
 
 uint16_t PressureRead();
 

@@ -8,36 +8,35 @@
 class DAC7678 {  
 
     public:
-	    DAC7678(unsigned char _address);
-	    void begin(TwoWire& w_);
+	    void begin(TwoWire& w_,uint8_t address);
 	    void reset();
-	    void setVREF(bool _refstate);
+	    void setVREF();
         void LDAC(bool _state);
-        void LDAC(unsigned char _channel, bool _state); 
-	    void offMode(unsigned char channel, unsigned char mode);
-	    void offMode(unsigned char mode);
+        void LDAC(uint8_t _channel, bool _state); 
+	    void offMode(uint8_t channel, uint8_t mode);
+	    void offMode(uint8_t mode);
 	    void enable();
         void disable();
-	    void enableChannel(unsigned char channel);
-	    void disableChannel(unsigned char channel);
-	    void set(int _value);
-	    void set(unsigned char channel, int _value);
-        void select(unsigned char _channel);
-        void update(unsigned char _channel, int _value);
+	    void enableChannel(uint8_t channel);
+	    void disableChannel(uint8_t channel);
+	    void set(uint16_t _value);
+	    void set(uint8_t channel, uint16_t _value);
+        void select(uint8_t _channel);
+        void update(uint8_t _channel, int _value);
 	    void clrMode(int _value);
-	    unsigned char DAC;
-	    unsigned int readChan(unsigned char _command);
-	    unsigned int readDAC(unsigned char _command);
+	    uint8_t DAC;
+	    unsigned int readChan(uint8_t _command);
+	    unsigned int readDAC(uint8_t _command);
 	
         // deprecated, kept for backwards compatibility
-	    void enable(unsigned char state);
-	    void enable(unsigned char channel, unsigned char state);
+	    void enable(uint8_t state);
+	    void enable(uint8_t channel, uint8_t state);
 
     private:
-        int dac7678_address;
-        unsigned char off_mode[8];
-        unsigned char LDAC_reg = 0xFF;
-	    void transmit(unsigned char _command, unsigned char _msdb, unsigned char _lsdb);
+        uint8_t dac7678_address;
+        uint8_t off_mode[8];
+        uint8_t LDAC_reg = 0xFF;
+	    void transmit(uint8_t _command, uint8_t _msdb, uint8_t _lsdb);
         TwoWire* Wire_;
 };
 

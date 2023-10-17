@@ -171,8 +171,11 @@ unsigned int vref = 5000;             // Voltage reference value for calculation
 unsigned int Heater_read_value = 0;          // Value read from DAC
 float heater_voltage = 0;                    // Read voltage
 
-uint16_t _value=2048;
+uint16_t _value=2200;
 int status_heaters=0;
+int voltPin = 33;   
+int involtPin=32;
+int isErr=0;
 /*******************************************************************************
 * Main program
 *******************************************************************************/
@@ -217,21 +220,27 @@ void setup()
 // which can be used if programming the DACs address and updating output registers.
   wire_pressure->begin();
   Serial.print("wire pressure begin \n");
+  pinMode(voltPin, OUTPUT);
+  digitalWrite(voltPin, HIGH); // turn on the heater driver PCB
+  delay(1); // give it a msec to turn on before trying I2C connection
+  pinMode(involtPin,INPUT);
+  isErr=digitalRead(involtPin);
+  if(isErr==0){
+    Serial.print("Error circuit low");
+  }
   wire_Heater->begin();
   Serial.print("wire heater begin \n");
-  wire_Heater->beginTransmission(0x48);
-  wire_Heater->write(0x70);
-  wire_Heater->write(0x00);
-  wire_Heater->write(0x00);
-  wire_Heater->endTransmission();
-  //HeaterSetup(*wire_Heater);
+  HeaterSetup(*wire_Heater);
+  for(int i=0; i <8; i++){
+    HeaterExecute(i,0);
+  }
+  delay(100);
+  isErr=digitalRead(involtPin);
+  if(isErr==0){
+    Serial.print("Error circuit low");
+    delay(100000);
+  }
   Serial.print("heater setup \n");
-  //transmit(CMD_INTREF_RS, 0x00, lsdb);
-  wire_Heater->beginTransmission(0x48);
-  wire_Heater->write(0x80);
-  wire_Heater->write(0x00);
-  wire_Heater->write(0x10);
-  wire_Heater->endTransmission();  
   //wire_HV->begin();
   // run setup of I2C stuff from support_functions
   //HVSetup(*wire_HV,address_hvdac);
@@ -279,6 +288,11 @@ void setup()
  ******************************************************************************/
 void loop()
 {
+  isErr=digitalRead(involtPin);
+  if(isErr==0){
+    Serial.print("Error circuit low");
+    Serial.println(_value,DEC);
+  }
   // Read in the values until a carriage return (13)
   if(Serial.available()){
     do{
@@ -357,7 +371,6 @@ void loop()
 
    if((long) (millis() - thermsUpdateTime) > 0){
     thermsUpdateTime+= THERMS_UPDATE_PERIOD;
-    Serial.print("Reading therm channel \n");
     switch(chip_to_read){
       case 0:
         thermistors.Therms[counter_all] = measure_channel((uint8_t)CHIP_SELECT_A, temp_channels[counter],TEMPERATURE);
@@ -384,13 +397,10 @@ void loop()
     if(chip_to_read>=5) chip_to_read=0;
     if(counter_all>=25) counter_all=0;    
     //thermistors.Therms[0] = measure_channel((uint8_t)CHIP_SELECT_E, temp_channels[4],TEMPERATURE);
-    Serial.print("Done reading therm channel\n");
   }
   // read in HV monitoring
   if((long) (millis() - hvmonUpdateTime) > 0){
     hvmonUpdateTime+= HVMON_UPDATE_PERIOD;
-    Serial.print("hv monitoring\n");
-
     switch(which_adc){
       case 0: hvmon.PotVmon=(uint16_t) analogRead(A4); // VMON potential
       case 1: hvmon.PotImon=(uint16_t) analogRead(A2); // IMON potential
@@ -400,61 +410,42 @@ void loop()
     }
     which_adc++;
     if(which_adc>=4) which_adc=0;
-    Serial.print("done hv monitoring\n");
   }
   // read in pressure
   if((long) (millis() - pressureUpdateTime) > 0){
     pressureUpdateTime+= PRESSURE_UPDATE_PERIOD;
-    Serial.print("pressure reading\n");
     dct_pressure.Pressure_vessel=PressureRead();
-    Serial.print("done pressure reading \n");
   }
   if((long) (millis() - LEDUpdateTime) > 0){
     LEDUpdateTime+= LED_UPDATE_PERIOD;
     switch_LED();
-    Serial.print("Heater executing \n");
-    //HeaterExecute(400);
-    //transmit(CMD_POWER_DOWN, 0x1F, 0xE0);
-    wire_Heater->beginTransmission(0x48);
-    wire_Heater->write(0x40);
-    wire_Heater->write(0x1F);
-    wire_Heater->write(0xE0);
-    wire_Heater->endTransmission();
-    Serial.print("done heater executing \n");
-    if(status_heaters==0){
+    /*if(status_heaters==0){
       _value=2048;
       status_heaters+=1;
     }
     else{
       _value=2866;
       status_heaters=0;
-    }
-    unsigned char _channel=6;
-    unsigned char _command = 0x30 + _channel;
-    unsigned char msdb = _value>>4;
-    unsigned char lsdb  = (_value << 4) & 0xF0;
-    //transmit(_command, msdb, lsdb);
-    wire_Heater->beginTransmission(0x48);
-    wire_Heater->write(_command);
-    wire_Heater->write(msdb);
-    wire_Heater->write(lsdb);
-    wire_Heater->endTransmission();
-    
+    }*/
+    _value+=1;
+    if(_value>=4096) _value=0;
+    HeaterExecute(6,_value);
   }
   if((long) (millis() - PACKETUpdateTime) > 0){
     PACKETUpdateTime+= PACKET_UPDATE_PERIOD;
     //Serial.println("INCOMING DATA");
     //Serial.println();
-    Serial.print("P: ");
+    /*Serial.print("P: ");
     print_PHV_mon();
     Serial.print(" C: ");
     print_CHV_mon();
     //print_pressure();
-    //Serial.println();    
+    //Serial.println();
+    */
   }
   if((long) (millis() - ThermPacketUpdateTime) > 0){
     ThermPacketUpdateTime+= THERMPACKET_UPDATE_PERIOD;
-    print_thermistors();
+    //print_thermistors();
   }
   if(step_HV_C){
     if((int) voltage_cathode >= CATHODE_VOLTAGE_CUTOFF){

@@ -4,37 +4,15 @@
 #include "defines.h"
 
 
-DAC7678::DAC7678(unsigned char _address) {
-  dac7678_address = _address;   // Set DAC to address passed to transmit function
-
-  // Preload HIGH-Z off mode - that way you can change it before begin()
-  for (unsigned char x = 0; x <= 7; x++){
-    off_mode[x] = HIGHZ;
-  }
-
-}
-
-void DAC7678::begin(TwoWire& w_) {
+void DAC7678::begin(TwoWire& w_, uint8_t address) {
   Wire_=&w_;
+  dac7678_address=address;
   reset(); 		  // Sends Power-On Reset command to DAC
   //disable();      // Make sure outputs are powered off
 }
 
-void DAC7678::setVREF(bool _refstate) {
-  // Sets reference mode
-  // _refstate 0: Internal vref turned off
-  // _refstate 1: Internal vref turned on
-
-  unsigned char lsdb;
-
-  if (_refstate) {
-        lsdb = 0x10;
-    }
-  else if (!_refstate) {
-    lsdb = 0x00;
-  }
-
-  transmit(CMD_INTREF_RS, 0x00, lsdb); 
+void DAC7678::setVREF() {
+  transmit(CMD_INTREF_RS, 0x00, 0x10); 
 }
 
 
@@ -126,7 +104,7 @@ void DAC7678::disableChannel(unsigned char channel) {
   }
 }
 
-void DAC7678::set(int _value) { 
+void DAC7678::set(uint16_t _value) { 
   // Sets all DAC channels to specified value 
   
   for (unsigned char x = 0; x <= 7; x++) {
@@ -134,24 +112,18 @@ void DAC7678::set(int _value) {
   }
 }
 
-void DAC7678::set(unsigned char _channel, int _value) {
+void DAC7678::set(unsigned char _channel, uint16_t _value) {
   // Set specified channel (0-7) to the specified value
-  
   //   Check for out of range values
   if (_value >= 4096 || _value < 0) {
     return;
   }
-
-
   if (_channel < 8) { // Check for out of range Channel #
     // Sets the variables
     unsigned char _command = CMD_IS_LDAC_BASE_ADDR + _channel;
-
-    unsigned int x = (unsigned int) (_value << 4);  // Data is offset +4 bits
-    unsigned char msdb = (unsigned char)(x >> 8);
-    unsigned char lsdb  = x & 0xFF;
-
-	// Send data to DAC
+    unsigned char msdb = _value>>4;
+    unsigned char lsdb  = (_value << 4) & 0xF0;
+    // Send data to DAC
     transmit(_command, msdb, lsdb);
   }
 }
