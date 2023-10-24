@@ -10,12 +10,14 @@ class DAC7678 {
     public:
 	    void begin(TwoWire& w_,uint8_t * address);
 	    void reset(int which);
+	    void setVREF(int which);
 	    void setVREF();
         void LDAC(bool _state);
         void LDAC(uint8_t _channel, bool _state); 
 	    void offMode(uint8_t channel, uint8_t mode);
 	    void offMode(uint8_t mode);
-	    void enable();
+	    void enable(int which);
+		void enable();
         void disable();
 	    void enableChannel(uint8_t channel);
 	    void disableChannel(uint8_t channel);

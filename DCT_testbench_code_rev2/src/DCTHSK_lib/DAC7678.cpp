@@ -14,6 +14,10 @@ void DAC7678::begin(TwoWire& w_, uint8_t * address) {
   //disable();      // Make sure outputs are powered off
 }
 
+void DAC7678::setVREF(int which) {
+  transmit(which, CMD_INTREF_RS, 0x00, 0x10); 
+}
+
 void DAC7678::setVREF() {
   transmit(CMD_INTREF_RS, 0x00, 0x10); 
 }
@@ -63,6 +67,12 @@ void DAC7678::LDAC(uint8_t _channel, bool _state) {
 void DAC7678::select(uint8_t _channel) {
   // Select channel for update
   transmit(CMD_SELECT + _channel, 0x00, 0x00);
+}
+
+void DAC7678::enable(int which) {
+  // Enables all the channels at once
+
+  transmit(which, CMD_POWER_DOWN, 0x1F, 0xE0);
 }
 
 void DAC7678::enable() {
