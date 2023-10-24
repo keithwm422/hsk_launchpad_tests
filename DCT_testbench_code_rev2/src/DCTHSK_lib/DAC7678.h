@@ -8,8 +8,8 @@
 class DAC7678 {  
 
     public:
-	    void begin(TwoWire& w_,uint8_t address);
-	    void reset();
+	    void begin(TwoWire& w_,uint8_t * address);
+	    void reset(int which);
 	    void setVREF();
         void LDAC(bool _state);
         void LDAC(uint8_t _channel, bool _state); 
@@ -33,10 +33,13 @@ class DAC7678 {
 	    void enable(uint8_t channel, uint8_t state);
 
     private:
+        uint8_t dac7678_addresses[3]; // 3 DAC chips in one object
         uint8_t dac7678_address;
         uint8_t off_mode[8];
         uint8_t LDAC_reg = 0xFF;
+	    void transmit(int which, uint8_t _command, uint8_t _msdb, uint8_t _lsdb);
 	    void transmit(uint8_t _command, uint8_t _msdb, uint8_t _lsdb);
+
         TwoWire* Wire_;
 };
 

@@ -4,10 +4,13 @@
 #include "defines.h"
 
 
-void DAC7678::begin(TwoWire& w_, uint8_t address) {
+void DAC7678::begin(TwoWire& w_, uint8_t * address) {
   Wire_=&w_;
-  dac7678_address=address;
-  reset(); 		  // Sends Power-On Reset command to DAC
+  for(int i=0;i<3;i++){
+    dac7678_addresses[i]=address[i];
+    reset(dac7678_addresses[i]); 		  // Sends Power-On Reset command to DAC
+  }
+  //reset(); 		  // Sends Power-On Reset command to DAC
   //disable();      // Make sure outputs are powered off
 }
 
@@ -16,9 +19,9 @@ void DAC7678::setVREF() {
 }
 
 
-void DAC7678::reset() {
+void DAC7678::reset(int which) {
   // Issues Reset command (Same as Power-On reset)
-  transmit(CMD_SOFT_RESET, 0x00, 0x00);
+  transmit(which, CMD_SOFT_RESET, 0x00, 0x00);
 }
 
 void DAC7678::offMode(uint8_t channel, uint8_t mode) {
@@ -195,6 +198,16 @@ unsigned int DAC7678::readDAC(uint8_t _command) {
     reading = reading >> 4;
   }
   return reading;
+}
+
+void DAC7678::transmit(int which, uint8_t _command, uint8_t _msdb, uint8_t _lsdb) {
+  // Transmit the actual command and high and low bytes to the DAC
+  dac7678_address=dac7678_addresses[which];
+  Wire_->beginTransmission(dac7678_address);
+  Wire_->write(_command);
+  Wire_->write(_msdb);
+  Wire_->write(_lsdb);
+  Wire_->endTransmission();
 }
 
 void DAC7678::transmit(uint8_t _command, uint8_t _msdb, uint8_t _lsdb) {

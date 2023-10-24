@@ -108,7 +108,8 @@ bool PressureSetup(TwoWire& wire){
 }
 
 bool HeaterSetup(TwoWire& wire){
-  dac.begin(wire,0x48);                        // Initialize the DAC
+  uint8_t address_in[3]={0x48,0x4A,0x4C}; // DACs are gnd, 5V, and floating on pin 2. this is the order they are declared here as well. 0x4C is last in array and is floating pin 2 DAC IC
+  dac.begin(wire,&address_in[0]);                        // Initialize the DAC
   dac.setVREF();
   dac.enable();              // Power up all DAC Channels
   return 0;
