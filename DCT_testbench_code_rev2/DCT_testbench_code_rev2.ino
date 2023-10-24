@@ -171,7 +171,7 @@ unsigned int vref = 5000;             // Voltage reference value for calculation
 unsigned int Heater_read_value = 0;          // Value read from DAC
 float heater_voltage = 0;                    // Read voltage
 
-uint16_t _value=2200;
+uint16_t _value=50;
 int status_heaters=0;
 int voltPin = 33;   
 int involtPin=32;
@@ -430,6 +430,7 @@ void loop()
     _value+=1;
     if(_value>=4096) _value=0;
     HeaterExecute(6,_value);
+    Serial.println(_value,DEC);
   }
   if((long) (millis() - PACKETUpdateTime) > 0){
     PACKETUpdateTime+= PACKET_UPDATE_PERIOD;

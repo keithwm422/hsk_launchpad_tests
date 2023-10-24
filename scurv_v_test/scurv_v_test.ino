@@ -1,5 +1,5 @@
 const int buttonPin = PUSH1;    
-int voltPin = 13;   
+int voltPin = 33;   
 int state = LOW;      
 int reading;           
 int previous = HIGH;   
