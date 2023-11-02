@@ -13,7 +13,7 @@ void setup() {
   Serial4.begin(19200);
   delay(1000);
   Serial.print("hello");
-  Serial4.print("B\r");
+  Serial4.print("E\r");
   pinMode(buttonPin, INPUT_PULLUP);
 
   // don't do anything else because this should only be sending messages when polled
@@ -27,44 +27,15 @@ void loop() {
   if(receive_new!=-1){
     Serial.print((char) receive_new);
   }
-  reading = digitalRead(buttonPin);
-  if (reading == HIGH && previous == LOW ) {
-    if (state == HIGH){
-      state = LOW;
-    }
-    else {
-      state = HIGH;
-      //digitalWrite(voltPin, HIGH);
+  int receive_0=Serial.read();
+  if(receive_0!=-1){
+    if(receive_0==65){
       Serial.println("pushed");
-      Serial4.print("B\r");
+      //Serial6.print("E\r");
       // try reading the register 20. 
-      Serial4.print("BR20\r");// read register 20 and it will be in the form ID REG = VALUE like B 016 = 199
-      Serial4.print("BW20=___\r"); //fill in __ with value to write
+      Serial4.print("ER20\r");// read register 20 and it will be in the form ID REG = VALUE like B 016 = 199
+      //Serial4.print("EW20=9303\r"); //fill in __ with value to write subtract 768 8535
       
     }
   }
-  previous = reading;
-
-/*    else {
-      if(i>=79) {
-        i=0;
-        break;
-      }
-      else i++;
-    }
-  }
-  for(int j=0;j<80;j++){
-    Serial.print(receive[i]);
-  }
-*/  // reset the characters
-//  for(int j=0;j<10;j++){
-//    receive[j]=0;
-//  }
-    //Serial.print(receive_new);
-  //}
-  /*else {
-    Serial3.print("A\r");
-    //Serial3.write(send_out_real,4);
-    //delay(1000);
-  }*/
 }

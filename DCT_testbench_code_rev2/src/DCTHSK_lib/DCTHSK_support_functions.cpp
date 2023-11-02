@@ -117,9 +117,9 @@ bool HeaterSetup(TwoWire& wire){
   return 0;
 }
 
-bool HeaterExecute(unsigned char _channel, uint16_t set_value){
-    dac.set(_channel,set_value);        // Write the value to all DAC channels
-    return 0;    
+bool HeaterExecute(int which, uint8_t _channel, uint16_t set_value){
+    dac.set(which, (uint8_t)(_channel),uint16_t(set_value));        // Write the value to all DAC channels
+    return 0;
 }
 uint16_t PressureRead(){
   return pressure_adc.readADC();

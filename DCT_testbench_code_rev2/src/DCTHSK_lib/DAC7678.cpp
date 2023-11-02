@@ -117,15 +117,15 @@ void DAC7678::disableChannel(uint8_t channel) {
   }
 }
 
-void DAC7678::set(uint16_t _value) { 
+void DAC7678::set(int which, uint16_t _value) { 
   // Sets all DAC channels to specified value 
   
   for (uint8_t x = 0; x <= 7; x++) {
-    set(x, _value);
+    set(which, x, _value);
   }
 }
 
-void DAC7678::set(uint8_t _channel, uint16_t _value) {
+void DAC7678::set(int which, uint8_t _channel, uint16_t _value) {
   // Set specified channel (0-7) to the specified value
   //   Check for out of range values
   if (_value >= 4096 || _value < 0) {
@@ -137,7 +137,7 @@ void DAC7678::set(uint8_t _channel, uint16_t _value) {
     uint8_t msdb = _value>>4;
     uint8_t lsdb  = (_value << 4) & 0xF0;
     // Send data to DAC
-    transmit(_command, msdb, lsdb);
+    transmit(which, _command, msdb, lsdb);
   }
 }
 
@@ -212,8 +212,8 @@ unsigned int DAC7678::readDAC(uint8_t _command) {
 
 void DAC7678::transmit(int which, uint8_t _command, uint8_t _msdb, uint8_t _lsdb) {
   // Transmit the actual command and high and low bytes to the DAC
-  dac7678_address=dac7678_addresses[which];
-  Wire_->beginTransmission(dac7678_address);
+  //dac7678_address=dac7678_addresses[which];
+  Wire_->beginTransmission(dac7678_addresses[which]);
   Wire_->write(_command);
   Wire_->write(_msdb);
   Wire_->write(_lsdb);

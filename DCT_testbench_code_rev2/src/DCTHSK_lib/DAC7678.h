@@ -21,8 +21,8 @@ class DAC7678 {
         void disable();
 	    void enableChannel(uint8_t channel);
 	    void disableChannel(uint8_t channel);
-	    void set(uint16_t _value);
-	    void set(uint8_t channel, uint16_t _value);
+	    void set(int which, uint16_t _value);
+	    void set(int which, uint8_t channel, uint16_t _value);
         void select(uint8_t _channel);
         void update(uint8_t _channel, int _value);
 	    void clrMode(int _value);
