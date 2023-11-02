@@ -130,7 +130,7 @@ uint8_t change_one[4]={254,170,0,0};
 // for Launchpad LED
 #define LED GREEN_LED
 //int LED=15;
-#define LED_UPDATE_PERIOD 5050
+#define LED_UPDATE_PERIOD 50
 unsigned long LEDUpdateTime=0; // keeping LED to visualize no hanging
 bool is_high=true;
 float pres_val=0;
@@ -171,11 +171,13 @@ unsigned int vref = 5000;             // Voltage reference value for calculation
 unsigned int Heater_read_value = 0;          // Value read from DAC
 float heater_voltage = 0;                    // Read voltage
 
-uint16_t _value=50;
+uint16_t _value=0;
 int status_heaters=0;
 int voltPin = 33;   
 int involtPin=32;
 int isErr=0;
+int which_DAC=0;
+uint8_t DAC_ch=0;
 /*******************************************************************************
 * Main program
 *******************************************************************************/
@@ -231,8 +233,10 @@ void setup()
   wire_Heater->begin();
   Serial.print("wire heater begin \n");
   HeaterSetup(*wire_Heater);
-  for(uint8_t i=0; i <8; i++){
-    HeaterExecute(0, (uint8_t) (i),(uint8_t) (0));
+  for(int j =0;j<3;j++){
+    for(uint8_t i=0; i <8; i++){
+      HeaterExecute(j, (uint8_t) (i),(uint16_t) (0));
+    }
   }
   delay(100);
   isErr=digitalRead(involtPin);
@@ -290,8 +294,20 @@ void loop()
 {
   isErr=digitalRead(involtPin);
   if(isErr==0){
-    Serial.print("Error circuit low");
+    Serial.println("Error circuit low");
+    Serial.print(which_DAC,DEC);
+    Serial.print(" , ");
+    Serial.print(DAC_ch,DEC);
+    Serial.print(" , ");    
     Serial.println(_value,DEC);
+    _value=0;
+    HeaterExecute(which_DAC,DAC_ch,(uint16_t)(_value));
+    DAC_ch++;
+    if(DAC_ch>=8){
+      which_DAC++;
+      DAC_ch=0;
+    }
+    if(which_DAC>=3) delay(100000);
   }
   // Read in the values until a carriage return (13)
   if(Serial.available()){
@@ -419,18 +435,25 @@ void loop()
   if((long) (millis() - LEDUpdateTime) > 0){
     LEDUpdateTime+= LED_UPDATE_PERIOD;
     switch_LED();
-    /*if(status_heaters==0){
-      _value=2048;
-      status_heaters+=1;
+    _value+=10;
+    if(_value>=4096){
+      Serial.println("Error circuit never achieved");
+      Serial.print(which_DAC,DEC);
+      Serial.print(" , ");
+      Serial.print(DAC_ch,DEC);
+      Serial.print(" , ");    
+      Serial.println(_value,DEC);
+      _value=0;
+      HeaterExecute(which_DAC,DAC_ch,(uint16_t)(_value));
+      DAC_ch++;
+      if(DAC_ch>=8){
+        which_DAC++;
+        DAC_ch=0;
+      }
+      if(which_DAC>=3) delay(100000);
     }
-    else{
-      _value=2866;
-      status_heaters=0;
-    }*/
-    _value+=1;
-    if(_value>=4096) _value=0;
-    HeaterExecute(0,(uint8_t)(6),(uint16_t)(_value));
-    Serial.println(_value,DEC);
+    HeaterExecute(which_DAC,DAC_ch,(uint16_t)(_value));
+    //Serial.println(_value,DEC);
   }
   if((long) (millis() - PACKETUpdateTime) > 0){
     PACKETUpdateTime+= PACKET_UPDATE_PERIOD;
