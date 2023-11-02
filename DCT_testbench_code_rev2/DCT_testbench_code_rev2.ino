@@ -231,9 +231,12 @@ void setup()
   wire_Heater->begin();
   Serial.print("wire heater begin \n");
   HeaterSetup(*wire_Heater);
+  HeaterSetChannel(2);
   for(int i=0; i <8; i++){
     HeaterExecute(i,0);
   }
+
+  
   delay(100);
   isErr=digitalRead(involtPin);
   if(isErr==0){
@@ -429,6 +432,7 @@ void loop()
     }*/
     _value+=1;
     if(_value>=4096) _value=0;
+    HeaterSetChannel(0);
     HeaterExecute(6,_value);
     Serial.println(_value,DEC);
   }

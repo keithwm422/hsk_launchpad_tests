@@ -27,7 +27,9 @@ bool PressureSetup(TwoWire& wire);
 
 bool HeaterSetup(TwoWire& wire);
 
-bool HeaterExecute(unsigned char _channel, uint16_t set_value);
+bool HeaterSetChannel(int DACic);
+
+bool HeaterExecute(uint8_t _channel, uint16_t set_value);
 
 uint16_t PressureRead();
 
