@@ -130,7 +130,7 @@ uint8_t change_one[4]={254,170,0,0};
 // for Launchpad LED
 #define LED GREEN_LED
 //int LED=15;
-#define LED_UPDATE_PERIOD 50
+#define LED_UPDATE_PERIOD 5000
 unsigned long LEDUpdateTime=0; // keeping LED to visualize no hanging
 bool is_high=true;
 float pres_val=0;
@@ -233,12 +233,23 @@ void setup()
   wire_Heater->begin();
   Serial.print("wire heater begin \n");
   HeaterSetup(*wire_Heater);
-  for(int j =0;j<3;j++){
-    for(uint8_t i=0; i <8; i++){
-      HeaterExecute(j, (uint8_t) (i),(uint16_t) (0));
+  which_DAC=0;
+  DAC_ch=0;
+  _value=40;
+  while(which_DAC<3){
+    DAC_ch=0;
+    while(DAC_ch<8){
+      HeaterExecute(which_DAC, DAC_ch,_value);
+      DAC_ch+=1;
     }
+    which_DAC+=1;
   }
-  delay(100);
+  which_DAC=0;
+  DAC_ch=0;
+  _value=30;
+  HeaterExecute(which_DAC, DAC_ch,_value);
+  //do_heater_study();
+  do_backwards_heater_study();
   isErr=digitalRead(involtPin);
   if(isErr==0){
     Serial.print("Error circuit low");
@@ -293,8 +304,8 @@ void setup()
 void loop()
 {
   isErr=digitalRead(involtPin);
-  if(isErr==0){
-    Serial.println("Error circuit low");
+  //if(isErr==0){
+    /*Serial.println("Error circuit low");
     Serial.print(which_DAC,DEC);
     Serial.print(" , ");
     Serial.print(DAC_ch,DEC);
@@ -307,8 +318,8 @@ void loop()
       which_DAC++;
       DAC_ch=0;
     }
-    if(which_DAC>=3) delay(100000);
-  }
+    if(which_DAC>=3) delay(100000);*/
+  //}
   // Read in the values until a carriage return (13)
   if(Serial.available()){
     do{
@@ -435,7 +446,7 @@ void loop()
   if((long) (millis() - LEDUpdateTime) > 0){
     LEDUpdateTime+= LED_UPDATE_PERIOD;
     switch_LED();
-    _value+=10;
+    _value+=1;
     if(_value>=4096){
       Serial.println("Error circuit never achieved");
       Serial.print(which_DAC,DEC);
@@ -1375,5 +1386,40 @@ void switch_LED(){
   else{    
     is_high=true;
     digitalWrite(LED,HIGH);
+  }
+}
+void do_heater_study(){
+  _value=1000;
+  which_DAC=0;
+  while(which_DAC<3){
+    DAC_ch=0;
+    while(DAC_ch<8){
+      _value=1000;
+      HeaterExecute(which_DAC, DAC_ch,_value);
+      delay(4000);
+      _value=0;
+      HeaterExecute(which_DAC, DAC_ch,_value);
+      delay(3000);
+      DAC_ch+=1;
+    }
+    which_DAC+=1;
+  }
+}
+
+void do_backwards_heater_study(){
+  _value=1000;
+  which_DAC=2;
+  while(which_DAC>-1){
+    DAC_ch=7;
+    while(DAC_ch>=0 && DAC_ch <=7){
+      _value=1000;
+      HeaterExecute(which_DAC, DAC_ch,_value);
+      delay(4000);
+      _value=0;
+      HeaterExecute(which_DAC, DAC_ch,_value);
+      delay(3000);
+      DAC_ch-=1;
+    }
+    which_DAC-=1;
   }
 }

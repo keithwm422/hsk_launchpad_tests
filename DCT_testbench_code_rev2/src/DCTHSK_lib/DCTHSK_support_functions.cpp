@@ -104,22 +104,23 @@ int whatToDoIfThermistors(uint8_t * respData){
 // returns 0 if one of the DAC's can't be set to 0 (and doesn't read 0).
 bool PressureSetup(TwoWire& wire){
   pressure_adc.begin(wire,0); // set the address (second arg) to 0 since Mike ordered a specific addr device
-  return 0;
+  return true;
 }
 
 bool HeaterSetup(TwoWire& wire){
-  uint8_t address_in[3]={0x48,0x4A,0x4C}; // DACs are gnd, 5V, and floating on pin 2. this is the order they are declared here as well. 0x4C is last in array and is floating pin 2 DAC IC
-  dac.begin(wire,&address_in[0]);                        // Initialize the DAC
+  //uint8_t address_in[3]={0x48,0x4A,0x4C}; // DACs are gnd, 5V, and floating on pin 2. this is the order they are declared here as well. 0x4C is last in array and is floating pin 2 DAC IC
+  dac.begin(wire);                        // Initialize the DAC
   for(int i=0;i<3;i++){
+    dac.reset(i);
     dac.setVREF(i); // now this needs to be done for all ICs
     dac.enable(i);              // Power up all DAC Channels
   }
-  return 0;
+  return true;
 }
 
 bool HeaterExecute(int which, uint8_t _channel, uint16_t set_value){
-    dac.set(which, (uint8_t)(_channel),uint16_t(set_value));        // Write the value to all DAC channels
-    return 0;
+    dac.set(which, (uint8_t)(_channel),(uint16_t)(set_value));        // Write the value to all DAC channels
+    return true;
 }
 uint16_t PressureRead(){
   return pressure_adc.readADC();
@@ -130,7 +131,7 @@ bool HVAllZero(){
   HVDAC.analogWrite(0,1); // channel 0 is VPGM, channel 1 is IPGM
   HVDAC.analogWrite(0,2); // channel 0 is VPGM, channel 1 is IPGM
   HVDAC.analogWrite(0,3); // channel 0 is VPGM, channel 1 is IPGM
-  return 0;
+  return true;
 }
 
 // returns 0 if one of the DAC's can't be set to 0 (and doesn't read 0).
@@ -138,13 +139,13 @@ bool HVSetup(TwoWire& wire, uint8_t address_hvdac){
   HVDAC.attach(wire,address_hvdac); // address is 0x10 probs.
   HVAllZero();
   // The attach function sets all DAC channels to have internal 4.096 as reference.
-  return 0;
+  return true;
 }
 
 bool CATChannelProgram(uint16_t data, uint8_t channel){
   //if(channel==0 || channel==1){
     HVDAC.analogWrite(data,channel); // channel 0 is VPGM, channel 1 is IPGM
-    return 0;
+    return true;
   //}
   //else return 1;
 }
@@ -152,7 +153,7 @@ bool CATChannelProgram(uint16_t data, uint8_t channel){
 bool POTChannelProgram(uint16_t data, uint8_t channel){
   //if(channel==2 || channel==3){
     HVDAC.analogWrite(data,channel); // channel 2 is VPGM, channel 3 is IPGM
-    return 0;
+    return true;
   //}
   //else return 1;
 }
